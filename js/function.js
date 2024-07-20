@@ -117,7 +117,7 @@ function movingToAngle(angle,  angle1, speedRotation=1)// функция пла�
 // функция расчета угла между 2 точками
 function angleIm(x1,y1, x2,y2)
 {
-    res = Math.atan2(y1 - y2, x1 - x2) * (180 / 3.14);//-90;
+    res = Math.atan2(y1 - y2, x1 - x2) * (180 / 3.14)-180;
     if (res >= 180) res -= 360;
     if (res <= -180) res += 360;
     return res;

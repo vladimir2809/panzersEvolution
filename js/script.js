@@ -1,10 +1,18 @@
 var canvas = null;
 var context = null;
-var canvasWidth = 1024;
-var canvasHeight = 600;
+/*var canvasWidth = 1024;
+var canvasHeight = 600*/;
+screenWidth = 1024;//option[numOption].widthScreenBlock*mapSize;// ширина экрана
+screenHeight = 600;// option[numOption].heightScreenBlock*mapSize;// высота экрана
+var windowWidth = 1024;//document.documentElement.clientWidth;
+var windowHeight = 600;//document.documentElement.clientHeight;
+var windowWidthOld = windowWidth;
+var windowHeighOld = windowHeight;
+var  canvasWidth= windowWidth;
+var  canvasHeight= windowHeight;
 var size = 40;
 var quantityColor = 64;
-var quantityPanzer = 64;
+var quantityPanzer = 14;
 var quantityWall = 64;
 var direction = 0;
 var numSelectPanzer = 0;
@@ -69,6 +77,11 @@ function create()
     context = canvas.getContext("2d");
     initKeyboardAndMouse(['KeyA', 'KeyW', 'KeyS', 'KeyD']);
     srand(2);
+    updateSize();
+/*    canvas.setAttribute('width',canvasWidth);
+    canvas.setAttribute('height',canvasHeight);
+    canvas.style.setProperty('left', (window.innerWidth - canvas.width)/2 + 'px'); 
+    canvas.style.setProperty('top', (window.innerHeight - canvas.height) / 2 + 'px');*/ 
     // создаем список цветов в градиенте от красновго до синего через зеленый
     for (let i = 0; i < quantityColor;i++)
     {
@@ -101,6 +114,7 @@ function create()
         colorArr.push(color);
     }
     console.log(colorArr);
+    // инициализируем стены
     for (let i = 0; i < quantityWall;i++)
     {
         let wallOne=JSON.parse(JSON.stringify(wall));
@@ -132,6 +146,57 @@ function create()
 
     //console.log(wallArr);
 }
+window.onresize = function()
+{
+    updateSize()
+}
+function updateSize()
+{
+    windowWidth=document.documentElement.clientWidth;
+    windowHeight=document.documentElement.clientHeight;
+    let mult =1;
+    if (windowWidth>=windowHeight)
+    {
+        canvasWidth = /*canvas.width = */windowHeight*screenWidth/screenHeight;
+        canvasHeight = /*canvas.height = */windowHeight;
+        if (canvasWidth>windowWidth)
+        {
+            mult = windowWidth/canvasWidth;
+           // canvas.width =
+                canvasWidth *= mult;
+            //canvas.height =
+                canvasHeight *= mult;
+        }
+        canvasWidthMore = true;
+    }
+    else
+    {
+        canvasWidthMore = false;
+        canvasWidth = /*canvas.width*/  windowWidth;
+        canvasHeight= /*canvas.height*/  windowWidth*screenHeight/screenWidth;
+    }
+    
+    canvas.setAttribute('width',canvasWidth);
+    canvas.setAttribute('height',canvasHeight);
+    canvas.style.setProperty('left', (window.innerWidth - canvas.width)/2 + 'px'); 
+    canvas.style.setProperty('top', (window.innerHeight - canvas.height) / 2 + 'px'); 
+    if (canvasWidthMore==true)
+    {
+        context.scale(windowHeight / screenHeight * mult, windowHeight / screenHeight * mult);   
+        mouseMultX = windowHeight / screenHeight * mult;
+        mouseMultY = windowHeight / screenHeight * mult;
+    }
+    else
+    {
+       context.scale(windowWidth/screenWidth,windowWidth/screenWidth);
+        mouseMultX = windowWidth / screenWidth;
+        mouseMultY = windowWidth / screenWidth;
+    }
+    //setOffsetMousePosXY((window.innerWidth - canvas.width)/2,
+    //                        (window.innerHeight - canvas.height)/2);
+    //camera.width = canvasWidth;
+    //camera.height = canvasHeight;
+}
 function drawAll() 
 {
     context.fillStyle = 'black';
@@ -152,7 +217,8 @@ function drawAll()
     {
         drawWall(wallArr[i]);
     }
-    
+    context.fillStyle = 'red';
+    context.fillText(mouseX+' '+mouseY, 1,20);
 }
 function drawWall(wall)
 {
@@ -226,6 +292,7 @@ function update()
         }
         updateStatePanzer(panzerArr[i]);
     }
+    //console.log(mouseX, mouseY);
 }
 function updateStatePanzer(panzer)
 {
@@ -247,12 +314,22 @@ function controlHumanPanzer(panzer)
     else if (checkPressKey('KeyD') == true && panzer.dir==1) panzer.x+=panzer.speed;
     else if (checkPressKey('KeyS') == true && panzer.dir==2) panzer.y+=panzer.speed;
     else if (checkPressKey('KeyA') == true && panzer.dir==3) panzer.x-=panzer.speed;
+/*    rotateXY=mathTowerRotateXY(panzerArr[num].x+panzerArr[num].mixTowerPosX,
+                    panzerArr[num].y+panzerArr[num].mixTowerPosY);*/
+    var rotateXY={
+        x: panzer.x + panzer.width / 2,
+        y: panzer.y + panzer.height / 2,
+    }
+    let angleAim=angleIm(rotateXY.x,rotateXY.y,mouseX,mouseY);
+    // плавно поварачиваем башню танка                             
+    panzer.angleTower=movingToAngle(panzer.angleTower,angleAim,100);
+    console.log(panzer.angleTower)
 
    
 }
 function collisionPanzerWall(panzer)
 {
-    for (let i = 0; i < quantityWall;i++)
+    for (let i = 0; i < wallArr.length;i++)
     {
         if (panzer.x+panzer.width>wallArr[i].x && 
             panzer.x<wallArr[i].x+wallArr[i].width &&
@@ -321,7 +398,7 @@ function collisionPanzerToPanzer(panzer,num)
     {
         if (num!=i)
         {
-            console.log(panzerArr[i]);
+            //console.log(panzerArr[i]);
             if (panzer.x+panzer.width>panzerArr[i].x &&
                 panzer.x<panzerArr[i].x+panzerArr[i].width &&
                 panzer.y+panzer.height>panzerArr[i].y &&
