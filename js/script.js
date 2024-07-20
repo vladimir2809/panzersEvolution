@@ -12,10 +12,13 @@ var  canvasWidth= windowWidth;
 var  canvasHeight= windowHeight;
 var size = 40;
 var quantityColor = 64;
+var quantityBullet = 500;
+var quantityBurst = 500;
 var quantityPanzer = 14;
 var quantityWall = 64;
 var direction = 0;
 var numSelectPanzer = 0;
+var distAttack = 300;
 var panzer = {
     being: true,
     x:1,
@@ -33,6 +36,8 @@ var panzer = {
     towerX1: null,
     towerY1: null,
     towerLength: 10,
+    timeAttack: 30,
+    countAttack: 0,
 }
 var wall = {
     x:null,
@@ -54,7 +59,195 @@ var camera = {
     width: 800,
     height: 600, 
 }
+var Bullets = function () { 
+   
 
+    this.bullet = {
+        being:false,
+        x:null,
+        y:null,
+        angle:null,
+        dist: 0,
+        DMG:null,
+    }
+    this.speed = 20; 
+    this.bulletArr = [];
+    this.init=function()
+    {
+        for (let i = 0; i < quantityBullet;i++)
+        {
+            let bullet = clone(this.bullet);
+            bullet.being = false;
+            this.bulletArr.push(bullet);
+        }
+    }
+    this.drawBullets=function(context)
+    {
+        for (let i = 0; i < this.bulletArr.length;i++)
+        {
+            if (this.bulletArr[i].being==true)
+            {
+                context.beginPath();
+                context.fillStyle = "#FFFF00";
+	            context.arc(this.bulletArr[i].x-camera.x,this.bulletArr[i].y-camera.y, 2, 2*Math.PI, false);
+	            context.fill();
+	            context.lineWidth = 1;
+	            context.strokeStyle = 'red';
+	            context.stroke();
+            }
+        }
+    }
+    this.shot=function(x,y,angle,DMG)
+    {
+        for (let i = 0; i < quantityBullet;i++)
+        if (this.bulletArr[i].being==false)
+        {
+            let bullet = clone(this.bullet);
+            bullet.being = true;
+            bullet.x = x;
+            bullet.y = y;
+            bullet.angle = angle;
+            bullet.DMG = DMG;
+            this.bulletArr[i] = bullet;
+            break;
+        }
+        //this.bulletArr.push(bullet);
+    }
+    this.update=function()
+    {
+        for (let i = 0; i < this.bulletArr.length;i++)
+        {
+            if (this.bulletArr[i].being==true)
+            {
+                let dx = 0;
+                let dy = 0;
+                dy = this.speed * Math.sin(pi*(this.bulletArr[i].angle) / 180) ;
+                dx = this.speed * Math.cos(pi * (this.bulletArr[i].angle ) / 180) ;
+                this.bulletArr[i].x += dx;
+                this.bulletArr[i].y += dy;
+                this.bulletArr[i].dist += Math.sqrt(dx * dx + dy * dy);
+                if (this.bulletArr[i].dist > distAttack) this.kill(i);
+            }
+        }
+    }
+    this.kill =function(num)
+    {
+        if (this.bulletArr[num].being==true)
+        {
+            this.bulletArr[num].being = false;
+        }
+    }
+    this.collisionWalls=function(walls)
+    {
+        for (let i = 0; i < this.bulletArr.length;i++)
+        {
+            bullet = this.bulletArr[i];
+            for (let j = 0; j < walls.length;j++)
+            {
+
+                let wall = walls[j];
+                
+                if (bullet.being==true)
+                if (bullet.x>wall.x && bullet.x<wall.x+wall.width &&
+                    bullet.y>wall.y && bullet.y<wall.y+wall.height)
+                {
+                    burst.start(bullet.x,bullet.y);;
+                    this.kill(i);
+                    //   io.sockets.emit('newBurst',{x:bullet.x,y:bullet.y});
+                }
+            }
+            for (let j = 0; j < panzerArr.length;j++)
+            {
+
+                let panzer = panzerArr[j];
+                
+                if (bullet.being==true)
+                if (bullet.x>panzer.x && bullet.x<panzer.x+panzer.width &&
+                    bullet.y>panzer.y && bullet.y<panzer.y+panzer.height)
+                {
+                    burst.start(bullet.x,bullet.y);;
+                    this.kill(i);
+                    //   io.sockets.emit('newBurst',{x:bullet.x,y:bullet.y});
+                }
+            }
+        }
+        for (let i = 0; i < this.bulletArr.length;i++)
+        {
+            bullet = this.bulletArr[i];
+            if (bullet.x>map.width/*screenWidth*/ || bullet.y>map.height/*screenHeight*/
+                ||  bullet.x<0 || bullet.y<0   )
+            {
+                this.kill(i);
+            }
+        }
+    }
+}
+var Burst=function()
+{
+    this.burstOne = {
+        being: false,
+        x: null,
+        y: null,
+        count: 0,
+        maxCount: 15,
+    }
+    this.burstArr = [];
+    this.init=function()
+    {
+        for (let i = 0; i < quantityBurst;i++)
+        {
+            let burst=clone(this.burstOne)
+            this.burstArr.push(burst);
+        }
+    }
+    this.draw=function()
+    {
+        for (let i = 0; i < this.burstArr.length;i++)
+        {
+            let burst = this.burstArr[i];
+        
+            if (burst.being==true)
+            {
+                context.strokeStyle = 'red';
+                context.lineWidth = 1;
+                context.beginPath();
+                context.arc(burst.x,burst.y, burst.count, 0,3.14*2, false);
+                context.stroke()
+            }
+        }
+
+    }
+    this.start=function(x,y)
+    {
+        for (let i = 0; i < this.burstArr.length;i++ )
+        {
+            if (this.burstArr[i].being==false)
+            {
+                this.burstArr[i].x = x;
+                this.burstArr[i].y = y;
+                this.burstArr[i].count = 0;
+                this.burstArr[i].being = true;
+                break;
+            }
+        }
+    }
+    this.update=function()
+    {
+        for (let i = 0; i < this.burstArr.length;i++ )
+        {
+            if (this.burstArr[i].being==true)
+            {
+                this.burstArr[i].count++;
+                if (this.burstArr[i].count>this.burstArr[i].maxCount)
+                {
+                    this.burstArr[i].being = false;
+                }
+            }
+        }
+    }
+
+    
+}
 var colorArr = [];
 var panzerArr = [];
 var wallArr = [];
@@ -143,7 +336,10 @@ function create()
         panzerArr.push(panzerOne);
         updateStatePanzer(panzerArr[i]);
     }
-
+    bullets = new Bullets();
+    bullets.init();
+    burst = new Burst();
+    burst.init();
     //console.log(wallArr);
 }
 window.onresize = function()
@@ -217,13 +413,15 @@ function drawAll()
     {
         drawWall(wallArr[i]);
     }
+    bullets.drawBullets(context);
+    burst.draw();
     context.fillStyle = 'red';
     context.fillText(mouseX+' '+mouseY, 1,20);
 }
 function drawWall(wall)
 {
     context.fillStyle = wall.color;
-    context.fillRect(wall.x, wall.y, wall.width, wall.height);
+    context.fillRect(wall.x, wall.y, wall.width+1, wall.height+1);
 }
 function drawPanzer(panzer,select=false)
 {
@@ -292,6 +490,9 @@ function update()
         }
         updateStatePanzer(panzerArr[i]);
     }
+    bullets.update();
+    bullets.collisionWalls(wallArr);
+    burst.update();
     //console.log(mouseX, mouseY);
 }
 function updateStatePanzer(panzer)
@@ -323,7 +524,16 @@ function controlHumanPanzer(panzer)
     let angleAim=angleIm(rotateXY.x,rotateXY.y,mouseX,mouseY);
     // плавно поварачиваем башню танка                             
     panzer.angleTower=movingToAngle(panzer.angleTower,angleAim,100);
-    console.log(panzer.angleTower)
+    //console.log(panzer.angleTower);
+    if (panzer.countAttack<panzer.countAttack+20)
+    {
+        panzer.countAttack++;
+    }
+    if (checkMouseLeft() && panzer.countAttack>panzer.timeAttack)
+    {
+        panzer.countAttack = 0;
+        bullets.shot(panzer.towerX1,panzer.towerY1,panzer.angleTower,10);
+    }
 
    
 }
