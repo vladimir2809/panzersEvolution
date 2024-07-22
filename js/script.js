@@ -14,7 +14,7 @@ var size = 40;
 var quantityColor = 64;
 var quantityBullet = 150;
 var quantityBurst = 500;
-var quantityPanzer = 14;
+var quantityPanzer = 64;
 var quantityWall = 64;
 var direction = 0;
 var numSelectPanzer = 0;
@@ -31,6 +31,10 @@ var panzer = {
     angleTower: 0,
     dir:0,
     speed:10,
+    maxHP: 1000,
+    HP: 1000,
+    maxEnergy: 1000,
+    energy: 1000,
     towerX:null,
     towerY: null,
     towerX1: null,
@@ -38,6 +42,7 @@ var panzer = {
     towerLength: 10,
     timeAttack: 30,
     countAttack: 0,
+
     genes: null,
     selectCommand:0,
 }
@@ -161,13 +166,13 @@ var Bullets = function () {
             if (bullet.x>obj.x && bullet.x<obj.x+obj.width &&
                 bullet.y>obj.y && bullet.y<obj.y+obj.height)
             {
-                return true;
+                return i;
                /* burst.start(bullet.x,bullet.y);;
                 this.kill(i);*/
                 //   io.sockets.emit('newBurst',{x:bullet.x,y:bullet.y});
             }
         }
-        return false;
+        return null;
     }
     this.collisionWalls=function(walls,num=null)
     {
@@ -175,13 +180,16 @@ var Bullets = function () {
         {    
             for (let i = 0; i < this.bulletArr.length;i++)
             {
-                if (this.checkCollision(this.bulletArr[i],walls)==true)
+                if (this.checkCollision(this.bulletArr[i],walls)!=null)
                 {
                     burst.start(this.bulletArr[i].x,this.bulletArr[i].y);;
                     this.kill(i);
                 }
-                if (this.checkCollision(this.bulletArr[i],panzerArr)==true)
+                let index = this.checkCollision(this.bulletArr[i], panzerArr);
+                if (index!=null)
+                if (panzerArr[index].being==true)
                 {
+                    panzerArr[index].HP -= this.bulletArr[num].DMG;
                     burst.start(this.bulletArr[i].x,this.bulletArr[i].y);;
                     this.kill(i);
                 }
@@ -189,13 +197,16 @@ var Bullets = function () {
         }
         else if (num!=null)
         {
-            if (this.checkCollision(this.bulletArr[num],walls)==true)
+            if (this.checkCollision(this.bulletArr[num],walls)!=null)
             {
                 burst.start(this.bulletArr[num].x,this.bulletArr[num].y);;
                 this.kill(num);
             }
-            if (this.checkCollision(this.bulletArr[num],panzerArr)==true)
+            let index = this.checkCollision(this.bulletArr[num], panzerArr);
+            if (index!=null)
+            if (panzerArr[index].being==true)
             {
+                panzerArr[index].HP -= this.bulletArr[num].DMG;
                 burst.start(this.bulletArr[num].x,this.bulletArr[num].y);;
                 this.kill(num);
             }
@@ -549,16 +560,19 @@ function drawAll()
 {
     context.fillStyle = 'black';
     context.fillRect(0, 0, screenWidth,screenHeight/*canvas.width, canvas.height*/);
-    for (let i = 0; i < quantityPanzer;i++)
+    for (let i = 0; i < panzerArr.length;i++)
     {
-        if (numSelectPanzer==i)
+        if (panzerArr[i].being==true)
         {
-            drawPanzer(panzerArr[i],true);
+            if (numSelectPanzer==i)
+            {
+                drawPanzer(panzerArr[i],true);
 
-        }
-        else
-        {
-            drawPanzer(panzerArr[i]);
+            }
+            else
+            {
+                drawPanzer(panzerArr[i]);
+            }
         }
     }
     for (let i = 0; i < quantityWall;i++)
@@ -569,6 +583,27 @@ function drawAll()
     burst.draw();
     context.fillStyle = 'red';
     context.fillText(mouseX+' '+mouseY, 1,20);
+    for (let i = 0; i < panzerArr.length;i++)
+    {
+        if (panzerArr[i].being==true)
+        {
+
+            let width = size;
+            if (panzerArr[i].HP>0)
+            {
+
+                context.fillStyle = "green";
+                context.fillRect(panzerArr[i].x-2,panzerArr[i].y-5,
+                        width*panzerArr[i].HP/panzerArr[i].maxHP,4);
+            }
+            if (panzerArr[i].energy>0)
+            {
+                context.fillStyle = "blue";
+                context.fillRect(panzerArr[i].x-2,panzerArr[i].y-10,
+                            width*panzerArr[i].energy/panzerArr[i].maxEnergy,4);
+            }
+        }
+    }
     //genes.draw(context);
 }
 function drawWall(wall)
@@ -627,28 +662,29 @@ function update()
 {
     for (let i = 0; i < panzerArr.length;i++)
     {
-        //panzerArr[i].angleBody++;
-        //panzerArr[i].angleTower-=4;
-       /* if (panzerArr[i].x == 800 && direction==0) direction = 1;
-        if (panzerArr[i].x == 1 && direction==1) direction =0;
-        if (direction == 0) panzerArr[i].x++;
-        if (direction == 1) panzerArr[i].x--;*/
-        if (numSelectPanzer==i)
+        if (panzerArr[i].being==true)
         {
-            controlHumanPanzer(panzerArr[i]);
+
+            if (numSelectPanzer==i)
+            {
+                controlHumanPanzer(panzerArr[i]);
      
           
-        }
-        else
-        {
-            completeGenesPanzer(panzerArr[i]);
-        }
-        collisionPanzerWall(panzerArr[i]);
-        collisionRectangleMap(panzerArr[i]);
-        collisionPanzerToPanzer(panzerArr[i],i)
+            }
+            else
+            {
+                completeGenesPanzer(panzerArr[i]);
+            }
         
-        updateStatePanzer(panzerArr[i]);
+            collisionPanzerWall(panzerArr[i]);
+            collisionRectangleMap(panzerArr[i]);
+            collisionPanzerToPanzer(panzerArr[i],i)
+        
+            updateStatePanzer(panzerArr[i]);
+        }
+        
     }
+    killedPanzers();
     bullets.update();
     bullets.collisionWalls(wallArr);
     burst.update();
@@ -662,6 +698,16 @@ function updateStatePanzer(panzer)
     panzer.towerX = centerX + Math.cos((Math.PI / 180) * panzer.angleTower) * panzer.sizeTower;
     panzer.towerY1 = panzer.towerY + Math.sin((Math.PI / 180) * panzer.angleTower) * panzer.towerLength;
     panzer.towerX1 = panzer.towerX + Math.cos((Math.PI / 180) * panzer.angleTower) * panzer.towerLength;
+}
+function killedPanzers()
+{
+    for (let i = 0; i < panzerArr.length;i++)
+    {
+        if (panzerArr[i].HP<=0)
+        {
+            panzerArr[i].being = false;
+        }
+    }
 }
 function controlHumanPanzer(panzer)
 {
@@ -691,7 +737,7 @@ function controlHumanPanzer(panzer)
     if (checkMouseLeft() && panzer.countAttack>panzer.timeAttack)
     {
         panzer.countAttack = 0;
-        bullets.shot(panzer.towerX1,panzer.towerY1,panzer.angleTower,10);
+        bullets.shot(panzer.towerX1,panzer.towerY1,panzer.angleTower,100);
     }  
 }
 function completeGenesPanzer(panzer)
@@ -712,7 +758,7 @@ function completeGenesPanzer(panzer)
         else if (value==4 && panzer.dir==3) panzer.x-=panzer.speed;
         if (value==0)
         {
-            bullets.shot(panzer.towerX1,panzer.towerY1,panzer.angleTower,10);
+            bullets.shot(panzer.towerX1,panzer.towerY1,panzer.angleTower,30);
         }
     }
     select++;//     quantityCommand
@@ -788,7 +834,7 @@ function collisionPanzerToPanzer(panzer,num)
 {
     for (let i = 0; i < panzerArr.length;i++)
     {
-        if (num!=i)
+        if (num!=i && panzerArr[i].being==true)
         {
             //console.log(panzerArr[i]);
             if (panzer.x+panzer.width>panzerArr[i].x &&
