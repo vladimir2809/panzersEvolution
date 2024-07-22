@@ -12,7 +12,7 @@ var  canvasWidth= windowWidth;
 var  canvasHeight= windowHeight;
 var size = 40;
 var quantityColor = 64;
-var quantityBullet = 500;
+var quantityBullet = 150;
 var quantityBurst = 500;
 var quantityPanzer = 14;
 var quantityWall = 64;
@@ -38,6 +38,8 @@ var panzer = {
     towerLength: 10,
     timeAttack: 30,
     countAttack: 0,
+    genes: null,
+    selectCommand:0,
 }
 var wall = {
     x:null,
@@ -76,13 +78,14 @@ var Bullets = function () {
     {
         for (let i = 0; i < quantityBullet;i++)
         {
-            let bullet = clone(this.bullet);
+            let bullet = JSON.parse(JSON.stringify(this.bullet));
             bullet.being = false;
             this.bulletArr.push(bullet);
         }
     }
     this.drawBullets=function(context)
     {
+        let countTrue = 0;
         for (let i = 0; i < this.bulletArr.length;i++)
         {
             if (this.bulletArr[i].being==true)
@@ -94,20 +97,23 @@ var Bullets = function () {
 	            context.lineWidth = 1;
 	            context.strokeStyle = 'red';
 	            context.stroke();
+                countTrue++;
             }
         }
+        context.fillText(countTrue+'',20,50);
     }
     this.shot=function(x,y,angle,DMG)
     {
         for (let i = 0; i < quantityBullet;i++)
         if (this.bulletArr[i].being==false)
         {
-            let bullet = clone(this.bullet);
+            let bullet = JSON.parse(JSON.stringify(this.bullet));
             bullet.being = true;
             bullet.x = x;
             bullet.y = y;
             bullet.angle = angle;
             bullet.DMG = DMG;
+            bullet.dist = 0;
             this.bulletArr[i] = bullet;
             break;
         }
@@ -117,16 +123,23 @@ var Bullets = function () {
     {
         for (let i = 0; i < this.bulletArr.length;i++)
         {
+            
             if (this.bulletArr[i].being==true)
+            for (let j = 0; j < this.speed;j++)
             {
-                let dx = 0;
-                let dy = 0;
-                dy = this.speed * Math.sin(pi*(this.bulletArr[i].angle) / 180) ;
-                dx = this.speed * Math.cos(pi * (this.bulletArr[i].angle ) / 180) ;
-                this.bulletArr[i].x += dx;
-                this.bulletArr[i].y += dy;
-                this.bulletArr[i].dist += Math.sqrt(dx * dx + dy * dy);
-                if (this.bulletArr[i].dist > distAttack) this.kill(i);
+                if (this.bulletArr[i].being==true)
+                {
+                    let dx = 0;
+                    let dy = 0;
+                    let speed2 =(this.bulletArr[i].dist == 0) ?  this.speed : /*this.speed*/ 1;
+                    dy = /*this.speed*/speed2* Math.sin(pi*(this.bulletArr[i].angle) / 180) ;
+                    dx = /*this.speed*/speed2 * Math.cos(pi * (this.bulletArr[i].angle ) / 180) ;
+                    this.bulletArr[i].x += dx;
+                    this.bulletArr[i].y += dy;
+                    this.collisionWalls(wallArr,i);
+                    this.bulletArr[i].dist += Math.sqrt(dx * dx + dy * dy);
+                    if (this.bulletArr[i].dist > distAttack) this.kill(i);
+                }
             }
         }
     }
@@ -137,39 +150,56 @@ var Bullets = function () {
             this.bulletArr[num].being = false;
         }
     }
-    this.collisionWalls=function(walls)
+    this.checkCollision=function(bullet,arr)
     {
-        for (let i = 0; i < this.bulletArr.length;i++)
+        for (let i = 0; i < arr.length;i++)
         {
-            bullet = this.bulletArr[i];
-            for (let j = 0; j < walls.length;j++)
-            {
 
-                let wall = walls[j];
+            let obj = arr[i];
                 
-                if (bullet.being==true)
-                if (bullet.x>wall.x && bullet.x<wall.x+wall.width &&
-                    bullet.y>wall.y && bullet.y<wall.y+wall.height)
+            if (bullet.being==true)
+            if (bullet.x>obj.x && bullet.x<obj.x+obj.width &&
+                bullet.y>obj.y && bullet.y<obj.y+obj.height)
+            {
+                return true;
+               /* burst.start(bullet.x,bullet.y);;
+                this.kill(i);*/
+                //   io.sockets.emit('newBurst',{x:bullet.x,y:bullet.y});
+            }
+        }
+        return false;
+    }
+    this.collisionWalls=function(walls,num=null)
+    {
+        if (num==null)
+        {    
+            for (let i = 0; i < this.bulletArr.length;i++)
+            {
+                if (this.checkCollision(this.bulletArr[i],walls)==true)
                 {
-                    burst.start(bullet.x,bullet.y);;
+                    burst.start(this.bulletArr[i].x,this.bulletArr[i].y);;
                     this.kill(i);
-                    //   io.sockets.emit('newBurst',{x:bullet.x,y:bullet.y});
+                }
+                if (this.checkCollision(this.bulletArr[i],panzerArr)==true)
+                {
+                    burst.start(this.bulletArr[i].x,this.bulletArr[i].y);;
+                    this.kill(i);
                 }
             }
-            for (let j = 0; j < panzerArr.length;j++)
+        }
+        else if (num!=null)
+        {
+            if (this.checkCollision(this.bulletArr[num],walls)==true)
             {
-
-                let panzer = panzerArr[j];
-                
-                if (bullet.being==true)
-                if (bullet.x>panzer.x && bullet.x<panzer.x+panzer.width &&
-                    bullet.y>panzer.y && bullet.y<panzer.y+panzer.height)
-                {
-                    burst.start(bullet.x,bullet.y);;
-                    this.kill(i);
-                    //   io.sockets.emit('newBurst',{x:bullet.x,y:bullet.y});
-                }
+                burst.start(this.bulletArr[num].x,this.bulletArr[num].y);;
+                this.kill(num);
             }
+            if (this.checkCollision(this.bulletArr[num],panzerArr)==true)
+            {
+                burst.start(this.bulletArr[num].x,this.bulletArr[num].y);;
+                this.kill(num);
+            }
+
         }
         for (let i = 0; i < this.bulletArr.length;i++)
         {
@@ -196,7 +226,7 @@ var Burst=function()
     {
         for (let i = 0; i < quantityBurst;i++)
         {
-            let burst=clone(this.burstOne)
+            let burst = JSON.parse(JSON.stringify(this.burstOne));
             this.burstArr.push(burst);
         }
     }
@@ -245,8 +275,124 @@ var Burst=function()
             }
         }
     }
+}
+var Genes = function () {
+    this.quantityCommand = 48;
+    this.typeDataValue = [
+        {
+            name: 'numMin0Max7',
+            valueMin: 0,
+            valueMax: 7,
+        },
+        {
+            name: 'numMin0Max1',
+            valueMin: 0,
+            valueMax: 1,
+        },
+        {
+            name: 'numQuanCommand',
+            valueMin: 0,
+            valueMax: this.quantityCommand,
+        },
 
-    
+    ],
+    this.commandDescr = [
+        {
+            name: 'move',
+            valueArr:[
+                {
+                    type:'numMin0Max7',
+                },
+            ],
+            countValue: null,
+            
+        },
+    /*    {
+            name: 'rot',
+            valueArr:[
+                {
+                    type:'numMin0Max1',
+                },
+            ],
+            countValue: null,
+            
+        },
+        {
+            name: 'goto',
+            valueArr:[
+                {
+                    type:'numQuanCommand',
+                },
+            ],
+            countValue: null,  
+        },*/
+    ];
+    for (let i = 0; i < this.commandDescr.length;i++)
+    {
+        this.commandDescr[i].countValue = this.commandDescr[i].valueArr.length;
+    }
+    this.command = {
+        name: '',
+        values: [],
+    };
+    this.commandArr = [];
+
+    this.initCommandRand = function()
+    {
+        for (let i = 0; i < this.quantityCommand;i++)
+        {
+            let R1 = randomInteger(0,this.commandDescr.length-1);
+            let randArr = [];
+            for (let j = 0; j < this.commandDescr[R1].countValue;j++)
+            {
+                let min = null;
+                let max = null;
+                for (let k = 0; k < this.typeDataValue.length;k++)
+                {
+                    if (this.typeDataValue[k].name==this.commandDescr[R1].valueArr[j].type)
+                    {
+                        //alert(123);
+                        min = this.typeDataValue[k].valueMin;
+                        max = this.typeDataValue[k].valueMax;
+                    }
+                }
+                //alert(min+' '+ max);
+                randArr.push(randomInteger(min,max));
+               
+            }
+            //alert(randArr[0]);
+            console.log(randArr);
+            let commandOne = JSON.parse(JSON.stringify(this.command));
+            commandOne.name = this.commandDescr[R1].name;
+            for (let k = 0; k < randArr.length;k++)
+            {
+                commandOne.values[k] = randArr[k];
+
+            }
+            this.commandArr.push(commandOne);
+        }
+        console.log(this.commandArr);
+    }
+    this.draw = function (context) 
+    {
+        let x = 820;
+        y = 10;
+        context.fillStyle = 'blue';
+        context.fillRect(x,y,100,580);
+        context.fillStyle = 'white';
+        context.font = '10px Arial';
+        let addX = 34;
+        for (let i = 0; i < this.commandArr.length;i++)
+        {
+            context.fillText(this.commandArr[i].name,x+3,y+i*12+12);
+            for (let j = 0; j < this.commandArr[i].values.length;j++)
+            {
+                context.fillText(this.commandArr[i].values[j],x+addX+j*addX,y+i*12+12);
+
+            }
+        }
+    }
+
 }
 var colorArr = [];
 var panzerArr = [];
@@ -332,14 +478,20 @@ function create()
             collisionPanzerToPanzer(panzerOne,null) == true);
         let index = i % quantityColor;
         panzerOne.color = colorArr[index];
-        
+        gs = new Genes();
+        gs.initCommandRand();
+        panzerOne.genes = gs.commandArr;
+        //console.log(panzerOne);
         panzerArr.push(panzerOne);
         updateStatePanzer(panzerArr[i]);
     }
+    console.log(panzerArr);
     bullets = new Bullets();
     bullets.init();
     burst = new Burst();
     burst.init();
+  /*  genes = new Genes();
+    genes.initCommandRand();*/
     //console.log(wallArr);
 }
 window.onresize = function()
@@ -396,7 +548,7 @@ function updateSize()
 function drawAll() 
 {
     context.fillStyle = 'black';
-    context.fillRect(0, 0, canvasWidth, canvasHeight);
+    context.fillRect(0, 0, screenWidth,screenHeight/*canvas.width, canvas.height*/);
     for (let i = 0; i < quantityPanzer;i++)
     {
         if (numSelectPanzer==i)
@@ -417,6 +569,7 @@ function drawAll()
     burst.draw();
     context.fillStyle = 'red';
     context.fillText(mouseX+' '+mouseY, 1,20);
+    //genes.draw(context);
 }
 function drawWall(wall)
 {
@@ -472,7 +625,7 @@ function drawPanzer(panzer,select=false)
 }
 function update() 
 {
-    for (let i = 0; i < quantityPanzer;i++)
+    for (let i = 0; i < panzerArr.length;i++)
     {
         //panzerArr[i].angleBody++;
         //panzerArr[i].angleTower-=4;
@@ -483,11 +636,17 @@ function update()
         if (numSelectPanzer==i)
         {
             controlHumanPanzer(panzerArr[i]);
-            collisionPanzerWall(panzerArr[i]);
-            collisionRectangleMap(panzerArr[i]);
-            collisionPanzerToPanzer(panzerArr[i],i)
+     
           
         }
+        else
+        {
+            completeGenesPanzer(panzerArr[i]);
+        }
+        collisionPanzerWall(panzerArr[i]);
+        collisionRectangleMap(panzerArr[i]);
+        collisionPanzerToPanzer(panzerArr[i],i)
+        
         updateStatePanzer(panzerArr[i]);
     }
     bullets.update();
@@ -533,9 +692,32 @@ function controlHumanPanzer(panzer)
     {
         panzer.countAttack = 0;
         bullets.shot(panzer.towerX1,panzer.towerY1,panzer.angleTower,10);
-    }
+    }  
+}
+function completeGenesPanzer(panzer)
+{
+    let select = panzer.selectCommand;
+    //console.log(panzer.selectCommand);
+    if (panzer.genes[select].name=='move')
+    {
+        value = panzer.genes[select].values[0];
+        if (value==1 && panzer.dir!=0) {panzer.dir=0; panzer.angleTower=panzer.angleBody=270}
+        if (value==2 && panzer.dir!=1) {panzer.dir=1; panzer.angleTower=panzer.angleBody=0}
+        if (value==3 && panzer.dir!=2) {panzer.dir=2; panzer.angleTower=panzer.angleBody=90}
+        if (value==4 && panzer.dir!=3) {panzer.dir=3; panzer.angleTower=panzer.angleBody=180}
 
-   
+        if (value==1 && panzer.dir==0) panzer.y-=panzer.speed;
+        else if (value==2 && panzer.dir==1) panzer.x+=panzer.speed;
+        else if (value==3 && panzer.dir==2) panzer.y+=panzer.speed;
+        else if (value==4 && panzer.dir==3) panzer.x-=panzer.speed;
+        if (value==0)
+        {
+            bullets.shot(panzer.towerX1,panzer.towerY1,panzer.angleTower,10);
+        }
+    }
+    select++;//     quantityCommand
+    select %= new Genes().quantityCommand;
+    panzer.selectCommand = select;
 }
 function collisionPanzerWall(panzer)
 {
