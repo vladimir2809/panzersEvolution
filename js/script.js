@@ -2,23 +2,29 @@ var canvas = null;
 var context = null;
 /*var canvasWidth = 1024;
 var canvasHeight = 600*/;
-screenWidth = 1024;//option[numOption].widthScreenBlock*mapSize;// ширина экрана
-screenHeight = 600;// option[numOption].heightScreenBlock*mapSize;// высота экрана
+let screenWidth = 1024;//option[numOption].widthScreenBlock*mapSize;// ширина экрана
+let screenHeight = 768;// option[numOption].heightScreenBlock*mapSize;// высота экрана
 var windowWidth = 1024;//document.documentElement.clientWidth;
-var windowHeight = 600;//document.documentElement.clientHeight;
+var windowHeight = 768;//document.documentElement.clientHeight;
 var windowWidthOld = windowWidth;
 var windowHeighOld = windowHeight;
 var  canvasWidth= windowWidth;
 var  canvasHeight= windowHeight;
+var scale = 1;
+var flagScaling = false;
+/*var  widthSide = screenWidth - camera.width;
+var  heightSide = screenHeight - camera.height;*/
 var size = 40;
 var quantityColor = 64;
 var quantityBullet = 150;
 var quantityBurst = 500;
 var quantityPanzer = 64;
 var quantityWall = 64;
-var direction = 0;
+
+var modeGame = 'GOD';// 'GOD', 'HERO', 'EGREGOR'
 var numSelectPanzer = 0;
 var distAttack = 300;
+var minusEnergyMove = 2;
 var panzer = {
     being: true,
     x:1,
@@ -57,8 +63,8 @@ var wall = {
 var map = {
     x:0,
     y:0,
-    width: 800,
-    height: 600,
+    width: 800*2,
+    height: 600*2,
 }
 var camera = {
     x:0,
@@ -66,6 +72,8 @@ var camera = {
     width: 800,
     height: 600, 
 }
+var  widthSide = screenWidth - camera.width;
+var  heightSide = screenHeight - camera.height;
 var Bullets = function () { 
    
 
@@ -252,7 +260,7 @@ var Burst=function()
                 context.strokeStyle = 'red';
                 context.lineWidth = 1;
                 context.beginPath();
-                context.arc(burst.x,burst.y, burst.count, 0,3.14*2, false);
+                context.arc(burst.x-camera.x,burst.y-camera.y, burst.count, 0,3.14*2, false);
                 context.stroke()
             }
         }
@@ -425,7 +433,7 @@ function create()
 {
     canvas = document.getElementById("canvas");
     context = canvas.getContext("2d");
-    initKeyboardAndMouse(['KeyA', 'KeyW', 'KeyS', 'KeyD']);
+    initKeyboardAndMouse(['KeyA', 'KeyW', 'KeyS', 'KeyD',"NumpadSubtract"]);
     srand(2);
     updateSize();
 /*    canvas.setAttribute('width',canvasWidth);
@@ -501,8 +509,8 @@ function create()
     bullets.init();
     burst = new Burst();
     burst.init();
-  /*  genes = new Genes();
-    genes.initCommandRand();*/
+    genes = new Genes();
+    genes.initCommandRand();
     //console.log(wallArr);
 }
 window.onresize = function()
@@ -560,6 +568,7 @@ function drawAll()
 {
     context.fillStyle = 'black';
     context.fillRect(0, 0, screenWidth,screenHeight/*canvas.width, canvas.height*/);
+    //context.save();
     for (let i = 0; i < panzerArr.length;i++)
     {
         if (panzerArr[i].being==true)
@@ -593,23 +602,34 @@ function drawAll()
             {
 
                 context.fillStyle = "green";
-                context.fillRect(panzerArr[i].x-2,panzerArr[i].y-5,
+                context.fillRect(panzerArr[i].x-camera.x-2,panzerArr[i].y-camera.y-5,
                         width*panzerArr[i].HP/panzerArr[i].maxHP,4);
             }
             if (panzerArr[i].energy>0)
             {
                 context.fillStyle = "blue";
-                context.fillRect(panzerArr[i].x-2,panzerArr[i].y-10,
+                context.fillRect(panzerArr[i].x-camera.x-2,panzerArr[i].y-camera.y-10,
                             width*panzerArr[i].energy/panzerArr[i].maxEnergy,4);
             }
         }
     }
-    //genes.draw(context);
+  /*  if (flagScaling==true)
+    {
+        context.scale(0.5,0.5);
+        flagScaling = false;
+
+    }*/
+   // context.restore();
+    context.fillStyle = 'gray';
+    context.fillRect(camera.width,1,widthSide,screenHeight);
+    context.fillRect(1,camera.height,screenWidth,heightSide);
+    genes.draw(context);
+    
 }
 function drawWall(wall)
 {
     context.fillStyle = wall.color;
-    context.fillRect(wall.x, wall.y, wall.width+1, wall.height+1);
+    context.fillRect(wall.x-camera.x, wall.y-camera.y, wall.width+1, wall.height+1);
 }
 function drawPanzer(panzer,select=false)
 {
@@ -628,25 +648,27 @@ function drawPanzer(panzer,select=false)
     // врашаем тело танка
     context.save();
   
-    context.translate(panzer.x + panzer.width / 2, panzer.y + panzer.height / 2); // translate to rectangle center
+    context.translate(panzer.x + panzer.width / 2-camera.x, 
+                panzer.y + panzer.height / 2-camera.y); // translate to rectangle center
 
 
 
     context.rotate((Math.PI / 180) * (panzer.angleBody+90)/*Math.trunc(panzer.angleBody/90)*90*/); // rotate
 
-    context.translate(-(panzer.x + panzer.width / 2), -(panzer.y + panzer.height / 2)); // translate back
+    context.translate(-(panzer.x + panzer.width / 2-camera.x),
+                -(panzer.y + panzer.height / 2-camera.y)); // translate back
 
     context.lineWidth = 1;
     //рисуем тело танка
-    context.strokeRect(panzer.x, panzer.y, panzer.width*multSide, panzer.height);
+    context.strokeRect(panzer.x-camera.x, panzer.y-camera.y, panzer.width*multSide, panzer.height);
     let addX = panzer.width - panzer.width * multSide;
-    context.strokeRect(panzer.x+addX, panzer.y, panzer.width*multSide, panzer.height);
-    context.strokeRect(panzer.x+panzer.width*multSide, panzer.y+panzer.height*multSide,
+    context.strokeRect(panzer.x-camera.x+addX, panzer.y-camera.y, panzer.width*multSide, panzer.height);
+    context.strokeRect(panzer.x-camera.x+panzer.width*multSide, panzer.y-camera.y+panzer.height*multSide,
                     panzer.width-panzer.width*multSide*2, panzer.height-panzer.height*multSide*2);
 
     // рисуем кружок башни
     context.beginPath();
-    context.arc(panzer.x + panzer.width / 2, panzer.y + panzer.height / 2, panzer.sizeTower, 0,3.14*2, false);
+    context.arc(panzer.x-camera.x + panzer.width / 2, panzer.y-camera.y + panzer.height / 2, panzer.sizeTower, 0,3.14*2, false);
     context.stroke();
 
     context.restore();
@@ -654,18 +676,72 @@ function drawPanzer(panzer,select=false)
     // рисуем пушку
     context.beginPath();
     context.lineWidth = 3;
-    context.moveTo(panzer.towerX,panzer.towerY);
-    context.lineTo(panzer.towerX1,panzer.towerY1);
+    context.moveTo(panzer.towerX-camera.x,panzer.towerY-camera.y);
+    context.lineTo(panzer.towerX1-camera.x,panzer.towerY1-camera.y);
     context.stroke();  
+}
+function cameraMove()
+{
+    let speedMoveCamera = 10;
+    if (checkPressKey('KeyW'))
+    {
+        if (camera.y>0) 
+        {
+            camera.y-=speedMoveCamera;
+        }
+        else
+        {
+            camera.y = 0;
+        }
+    }
+    if (checkPressKey('KeyD')) 
+    {
+       if (camera.x+camera.width<map.x+map.width)
+       {
+           camera.x+=speedMoveCamera;   
+       }
+       else
+       {
+           camera.x = map.x + map.width - camera.width;
+       }
+    }
+    if (checkPressKey('KeyS')) 
+    {
+       if (camera.y+camera.height<map.y+map.height)
+       {
+           camera.y+=speedMoveCamera;
+       }
+       else
+       {
+           camera.y = map.y + map.height - camera.height;
+       }
+    }
+    if (checkPressKey('KeyA')) 
+    {
+    //    camera.x-=speedMoveCamera;
+        if (camera.x>0) 
+        {
+            camera.x-=speedMoveCamera;
+        }
+        else
+        {
+            camera.x = 0;
+        }
+    }
 }
 function update() 
 {
+    if (keyUpDuration('NumpadSubtract',100)==true)
+    {
+        scale*=0.75;
+    }
+    if (modeGame == 'GOD') cameraMove();
     for (let i = 0; i < panzerArr.length;i++)
     {
         if (panzerArr[i].being==true)
         {
 
-            if (numSelectPanzer==i)
+            if (numSelectPanzer==i && modeGame=='HERO')
             {
                 controlHumanPanzer(panzerArr[i]);
      
@@ -703,7 +779,7 @@ function killedPanzers()
 {
     for (let i = 0; i < panzerArr.length;i++)
     {
-        if (panzerArr[i].HP<=0)
+        if (panzerArr[i].HP<=0 || panzerArr[i].energy<=0)
         {
             panzerArr[i].being = false;
         }
@@ -711,15 +787,54 @@ function killedPanzers()
 }
 function controlHumanPanzer(panzer)
 {
-    if (checkPressKey('KeyW') == true && panzer.dir!=0) {panzer.dir=0; panzer.angleTower=panzer.angleBody=270}
-    if (checkPressKey('KeyD') == true && panzer.dir!=1) {panzer.dir=1; panzer.angleTower=panzer.angleBody=0}
-    if (checkPressKey('KeyS') == true && panzer.dir!=2) {panzer.dir=2; panzer.angleTower=panzer.angleBody=90}
-    if (checkPressKey('KeyA') == true && panzer.dir!=3) {panzer.dir=3; panzer.angleTower=panzer.angleBody=180}
+    let minusEnergy = minusEnergyMove / 10;;
+    if (checkPressKey('KeyW') == true && panzer.dir!=0)
+    {
+        panzer.dir = 0; 
+        panzer.angleTower = panzer.angleBody = 270;
+        panzer.energy -= minusEnergy;
+    }
+    if (checkPressKey('KeyD') == true && panzer.dir!=1)
+    {
+        panzer.dir=1;
+        panzer.angleTower = panzer.angleBody = 0;
+        panzer.energy -= minusEnergy;
+    }
+    if (checkPressKey('KeyS') == true && panzer.dir!=2) 
+    {
+        panzer.dir=2;
+        panzer.angleTower = panzer.angleBody = 90;
+        panzer.energy -= minusEnergy;
+    }
 
-    if (checkPressKey('KeyW') == true && panzer.dir==0) panzer.y-=panzer.speed;
-    else if (checkPressKey('KeyD') == true && panzer.dir==1) panzer.x+=panzer.speed;
-    else if (checkPressKey('KeyS') == true && panzer.dir==2) panzer.y+=panzer.speed;
-    else if (checkPressKey('KeyA') == true && panzer.dir==3) panzer.x-=panzer.speed;
+    if (checkPressKey('KeyA') == true && panzer.dir!=3) 
+    {
+        panzer.dir=3;
+        panzer.angleTower = panzer.angleBody = 180;
+        panzer.energy -= minusEnergy;
+    }
+
+    minusEnergy = minusEnergyMove;
+    if (checkPressKey('KeyW') == true && panzer.dir==0) 
+    {
+        panzer.y-=panzer.speed;
+        panzer.energy -= minusEnergy;
+    }
+    else if (checkPressKey('KeyD') == true && panzer.dir==1) 
+    {
+        panzer.x+=panzer.speed;
+        panzer.energy -= minusEnergy;
+    }
+    else if (checkPressKey('KeyS') == true && panzer.dir==2) 
+    {
+        panzer.y+=panzer.speed;
+        panzer.energy -= minusEnergy;
+    }
+    else if (checkPressKey('KeyA') == true && panzer.dir==3) 
+    {
+        panzer.x-=panzer.speed;
+        panzer.energy -= minusEnergy;
+    }
 /*    rotateXY=mathTowerRotateXY(panzerArr[num].x+panzerArr[num].mixTowerPosX,
                     panzerArr[num].y+panzerArr[num].mixTowerPosY);*/
     var rotateXY={
@@ -739,6 +854,7 @@ function controlHumanPanzer(panzer)
         panzer.countAttack = 0;
         bullets.shot(panzer.towerX1,panzer.towerY1,panzer.angleTower,100);
     }  
+    panzer.energy -= minusEnergyMove/40;
 }
 function completeGenesPanzer(panzer)
 {
@@ -747,23 +863,64 @@ function completeGenesPanzer(panzer)
     if (panzer.genes[select].name=='move')
     {
         value = panzer.genes[select].values[0];
-        if (value==1 && panzer.dir!=0) {panzer.dir=0; panzer.angleTower=panzer.angleBody=270}
-        if (value==2 && panzer.dir!=1) {panzer.dir=1; panzer.angleTower=panzer.angleBody=0}
-        if (value==3 && panzer.dir!=2) {panzer.dir=2; panzer.angleTower=panzer.angleBody=90}
-        if (value==4 && panzer.dir!=3) {panzer.dir=3; panzer.angleTower=panzer.angleBody=180}
+        let minusEnergy = minusEnergyMove / 10;
+        if (value==1 && panzer.dir!=0)
+        {
+            panzer.dir=0;
+            panzer.angleTower = panzer.angleBody = 270;
+            panzer.energy -= minusEnergy;
+        }
+        if (value==2 && panzer.dir!=1) 
+        {
+            panzer.dir=1; 
+            panzer.angleTower = panzer.angleBody = 0;
+            panzer.energy -= minusEnergy;
+        }
+        if (value==3 && panzer.dir!=2) 
+        {
+            panzer.dir=2;
+            panzer.angleTower = panzer.angleBody = 90;
+            panzer.energy -= minusEnergy;
+        }
+        if (value==4 && panzer.dir!=3) 
+        {
+            panzer.dir=3; 
+            panzer.angleTower = panzer.angleBody = 180;
+            panzer.energy -= minusEnergy;
+        }
+        minusEnergy = minusEnergyMove;
+        if (value==1 && panzer.dir==0){ panzer.y-=panzer.speed; panzer.energy -= minusEnergy;}
+        else if (value==2 && panzer.dir==1) {panzer.x+=panzer.speed; panzer.energy -= minusEnergy;}
+        else if (value==3 && panzer.dir==2) {panzer.y+=panzer.speed; panzer.energy -= minusEnergy;}
+        else if (value==4 && panzer.dir==3) {panzer.x-=panzer.speed; panzer.energy -= minusEnergy;}
+        
+        if (value==5)
+        {
+            panzer.angleTower += 10;
+        }
 
-        if (value==1 && panzer.dir==0) panzer.y-=panzer.speed;
-        else if (value==2 && panzer.dir==1) panzer.x+=panzer.speed;
-        else if (value==3 && panzer.dir==2) panzer.y+=panzer.speed;
-        else if (value==4 && panzer.dir==3) panzer.x-=panzer.speed;
+        if (value==6)
+        {
+            panzer.angleTower -= 10;
+        }
+
+        if (panzer.countAttack<panzer.countAttack+10) 
+        {
+            panzer.countAttack++;
+        }
         if (value==0)
         {
-            bullets.shot(panzer.towerX1,panzer.towerY1,panzer.angleTower,30);
+            if (panzer.countAttack>=panzer.timeAttack)
+            {
+                bullets.shot(panzer.towerX1,panzer.towerY1,panzer.angleTower,30);
+                panzer.countAttack = 0;
+            }
         }
     }
     select++;//     quantityCommand
     select %= new Genes().quantityCommand;
     panzer.selectCommand = select;
+    panzer.energy -= minusEnergyMove / 40;;
 }
 function collisionPanzerWall(panzer)
 {
