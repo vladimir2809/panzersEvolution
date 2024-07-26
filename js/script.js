@@ -63,8 +63,8 @@ var wall = {
 var map = {
     x:0,
     y:0,
-    width: 800*2,
-    height: 600*2,
+    width: 800*4,
+    height: 600*4,
 }
 var camera = {
     x:0,
@@ -105,7 +105,8 @@ var Bullets = function () {
             {
                 context.beginPath();
                 context.fillStyle = "#FFFF00";
-	            context.arc(this.bulletArr[i].x-camera.x,this.bulletArr[i].y-camera.y, 2, 2*Math.PI, false);
+	            context.arc(this.bulletArr[i].x*scale-camera.x,this.bulletArr[i].y*scale-camera.y, 
+                                        2*scale, 2*Math.PI, false);
 	            context.fill();
 	            context.lineWidth = 1;
 	            context.strokeStyle = 'red';
@@ -260,7 +261,8 @@ var Burst=function()
                 context.strokeStyle = 'red';
                 context.lineWidth = 1;
                 context.beginPath();
-                context.arc(burst.x-camera.x,burst.y-camera.y, burst.count, 0,3.14*2, false);
+                context.arc(burst.x*scale-camera.x,burst.y*scale-camera.y,
+                                burst.count*scale, 0,3.14*2, false);
                 context.stroke()
             }
         }
@@ -433,7 +435,7 @@ function create()
 {
     canvas = document.getElementById("canvas");
     context = canvas.getContext("2d");
-    initKeyboardAndMouse(['KeyA', 'KeyW', 'KeyS', 'KeyD',"NumpadSubtract"]);
+    initKeyboardAndMouse(['KeyA', 'KeyW', 'KeyS', 'KeyD',"NumpadSubtract",'NumpadAdd']);
     srand(2);
     updateSize();
 /*    canvas.setAttribute('width',canvasWidth);
@@ -602,14 +604,16 @@ function drawAll()
             {
 
                 context.fillStyle = "green";
-                context.fillRect(panzerArr[i].x-camera.x-2,panzerArr[i].y-camera.y-5,
-                        width*panzerArr[i].HP/panzerArr[i].maxHP,4);
+                context.fillRect(panzerArr[i].x*scale-camera.x-2*scale,
+                        panzerArr[i].y*scale-camera.y-5*scale,
+                        width*panzerArr[i].HP/panzerArr[i].maxHP*scale,4*scale);
             }
             if (panzerArr[i].energy>0)
             {
                 context.fillStyle = "blue";
-                context.fillRect(panzerArr[i].x-camera.x-2,panzerArr[i].y-camera.y-10,
-                            width*panzerArr[i].energy/panzerArr[i].maxEnergy,4);
+                context.fillRect(panzerArr[i].x*scale-camera.x-2*scale,
+                            panzerArr[i].y*scale-camera.y-10*scale,
+                            width*panzerArr[i].energy/panzerArr[i].maxEnergy*scale,4*scale);
             }
         }
     }
@@ -629,7 +633,8 @@ function drawAll()
 function drawWall(wall)
 {
     context.fillStyle = wall.color;
-    context.fillRect(wall.x-camera.x, wall.y-camera.y, wall.width+1, wall.height+1);
+    context.fillRect(wall.x*scale-camera.x, wall.y*scale-camera.y, 
+                (wall.width+1)*scale, (wall.height+1)*scale);
 }
 function drawPanzer(panzer,select=false)
 {
@@ -648,27 +653,33 @@ function drawPanzer(panzer,select=false)
     // врашаем тело танка
     context.save();
   
-    context.translate(panzer.x + panzer.width / 2-camera.x, 
-                panzer.y + panzer.height / 2-camera.y); // translate to rectangle center
+    context.translate(panzer.x*scale + panzer.width / 2*scale-camera.x, 
+                panzer.y*scale + panzer.height / 2*scale-camera.y); // translate to rectangle center
 
 
 
     context.rotate((Math.PI / 180) * (panzer.angleBody+90)/*Math.trunc(panzer.angleBody/90)*90*/); // rotate
 
-    context.translate(-(panzer.x + panzer.width / 2-camera.x),
-                -(panzer.y + panzer.height / 2-camera.y)); // translate back
+    context.translate(-(panzer.x*scale + panzer.width / 2*scale-camera.x),
+                -(panzer.y*scale + panzer.height / 2*scale-camera.y)); // translate back
 
     context.lineWidth = 1;
     //рисуем тело танка
-    context.strokeRect(panzer.x-camera.x, panzer.y-camera.y, panzer.width*multSide, panzer.height);
+    context.strokeRect(panzer.x*scale-camera.x, panzer.y*scale-camera.y,
+            panzer.width*multSide*scale, panzer.height*scale);
     let addX = panzer.width - panzer.width * multSide;
-    context.strokeRect(panzer.x-camera.x+addX, panzer.y-camera.y, panzer.width*multSide, panzer.height);
-    context.strokeRect(panzer.x-camera.x+panzer.width*multSide, panzer.y-camera.y+panzer.height*multSide,
-                    panzer.width-panzer.width*multSide*2, panzer.height-panzer.height*multSide*2);
+    context.strokeRect(panzer.x*scale-camera.x+addX*scale, panzer.y*scale-camera.y, 
+            panzer.width*multSide*scale, panzer.height*scale);
+    context.strokeRect(panzer.x*scale-camera.x+panzer.width*multSide*scale,
+                    panzer.y*scale-camera.y+panzer.height*multSide*scale,
+                    (panzer.width-panzer.width*multSide*2)*scale,
+                    (panzer.height-panzer.height*multSide*2)*scale);
 
     // рисуем кружок башни
     context.beginPath();
-    context.arc(panzer.x-camera.x + panzer.width / 2, panzer.y-camera.y + panzer.height / 2, panzer.sizeTower, 0,3.14*2, false);
+    context.arc(panzer.x*scale-camera.x + panzer.width / 2*scale,
+                panzer.y*scale-camera.y + panzer.height / 2*scale,
+                panzer.sizeTower*scale, 0,3.14*2, false);
     context.stroke();
 
     context.restore();
@@ -676,8 +687,8 @@ function drawPanzer(panzer,select=false)
     // рисуем пушку
     context.beginPath();
     context.lineWidth = 3;
-    context.moveTo(panzer.towerX-camera.x,panzer.towerY-camera.y);
-    context.lineTo(panzer.towerX1-camera.x,panzer.towerY1-camera.y);
+    context.moveTo(panzer.towerX*scale-camera.x,panzer.towerY*scale-camera.y);
+    context.lineTo(panzer.towerX1*scale-camera.x,panzer.towerY1*scale-camera.y);
     context.stroke();  
 }
 function cameraMove()
@@ -731,10 +742,7 @@ function cameraMove()
 }
 function update() 
 {
-    if (keyUpDuration('NumpadSubtract',100)==true)
-    {
-        scale*=0.75;
-    }
+  
     if (modeGame == 'GOD') cameraMove();
     for (let i = 0; i < panzerArr.length;i++)
     {
@@ -764,16 +772,26 @@ function update()
     bullets.update();
     bullets.collisionWalls(wallArr);
     burst.update();
+
+    if (keyUpDuration('NumpadSubtract',100)==true)
+    {
+        scale*=0.75;
+    }
+    if (keyUpDuration('NumpadAdd',100)==true)
+    {
+        scale*=1.333;
+       // alert(scale);
+    }
     //console.log(mouseX, mouseY);
 }
 function updateStatePanzer(panzer)
 {
-    let centerX = panzer.x + panzer.width / 2;
-    let centerY = panzer.y + panzer.height / 2;
-    panzer.towerY = centerY + Math.sin((Math.PI / 180) * panzer.angleTower) * panzer.sizeTower;
-    panzer.towerX = centerX + Math.cos((Math.PI / 180) * panzer.angleTower) * panzer.sizeTower;
-    panzer.towerY1 = panzer.towerY + Math.sin((Math.PI / 180) * panzer.angleTower) * panzer.towerLength;
-    panzer.towerX1 = panzer.towerX + Math.cos((Math.PI / 180) * panzer.angleTower) * panzer.towerLength;
+    let centerX = (panzer.x + panzer.width / 2)//*scale
+    let centerY = (panzer.y + panzer.height / 2)//*scale;
+    panzer.towerY = (centerY + Math.sin((Math.PI / 180) * panzer.angleTower) * panzer.sizeTower)//*scale;
+    panzer.towerX = (centerX + Math.cos((Math.PI / 180) * panzer.angleTower) * panzer.sizeTower)//*scale;
+    panzer.towerY1 = panzer.towerY +( Math.sin((Math.PI / 180) * panzer.angleTower) * panzer.towerLength)//*scale;
+    panzer.towerX1 = panzer.towerX +( Math.cos((Math.PI / 180) * panzer.angleTower) * panzer.towerLength)//*scale;
 }
 function killedPanzers()
 {
