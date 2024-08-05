@@ -49,6 +49,38 @@ function checkInObj(obj,x,y)
     }
     return false;
 }
+function checkCollision(obj1,obj2)// проверка столкновений двух прямоугольных обьектов
+{
+   ////console.log(obj1.x);
+    x=obj1.x;//-dx;
+    y=obj1.y;//-dy;
+    x1=obj2.x;//-dx1;
+    y1=obj2.y;//-dy1;
+    ////console.log('x '+x+' y '+y+'  x1'+x1+'  y1'+y1+'  Dx1'+dx1+'  Dy1'+dy1);
+    if (x<x1+obj2.width && x+obj1.width>x1 &&
+        y<y1+obj2.height && y+obj1.height>y1)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+    
+}
+function checkCollisionArr(obj,arr)// сталкновение обьекта с массивом обьектов
+{
+    for (let i=0;i<arr.length;i++)
+    {   
+        if (arr[i].being==true)
+        if (checkCollision(obj,arr[i]))
+        {
+            return i;
+            break;
+        }
+    }
+    return -1;
+}
 function mixingShot(mix)// функция которая генерирует случайные числа с дисперсией mix
 {
     if (mix>=100) return 0;

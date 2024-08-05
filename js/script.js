@@ -1,9 +1,9 @@
-var canvas = null;
+﻿var canvas = null;
 var context = null;
 /*var canvasWidth = 1024;
 var canvasHeight = 600*/;
-let screenWidth = 1024;//option[numOption].widthScreenBlock*mapSize;// ������ ������
-let screenHeight = 768;// option[numOption].heightScreenBlock*mapSize;// ������ ������
+let screenWidth = 1024;//option[numOption].widthScreenBlock*mapSize;// ширина экрана
+let screenHeight = 768;// option[numOption].heightScreenBlock*mapSize;// высота экрана
 var windowWidth = 1024;//document.documentElement.clientWidth;
 var windowHeight = 768;//document.documentElement.clientHeight;
 var windowWidthOld = windowWidth;
@@ -25,6 +25,10 @@ var modeGame = 'GOD';// 'GOD', 'HERO', 'EGREGOR'
 var numSelectPanzer = 0;
 var distAttack = 300;
 var minusEnergyMove = 2;
+var imageArr=new Map();// массив картинок
+var nameImageArr = ['energy','patrons','HP'];
+var countLoadImage=0;// количество загруженных картинок
+var countLoopIter = 0;
 var panzer = {
     being: true,
     x:1,
@@ -41,6 +45,7 @@ var panzer = {
     HP: 1000,
     maxEnergy: 1000,
     energy: 1000,
+    countPatrons:10,
     towerX:null,
     towerY: null,
     towerX1: null,
@@ -53,6 +58,7 @@ var panzer = {
     selectCommand:0,
 }
 var wall = {
+    being:false,
     x:null,
     y:null,
     width: size,
@@ -114,7 +120,7 @@ var Bullets = function () {
                 countTrue++;
             }
         }
-        context.fillText(countTrue+'',20,50);
+        //context.fillText(countTrue+'',20,50);
     }
     this.shot=function(x,y,angle,DMG)
     {
@@ -297,6 +303,117 @@ var Burst=function()
         }
     }
 }
+var Bonuses = function () {
+    this.quantityBonus = 150;
+    this.quantityBonusMin = 10;
+    this.bonus = {
+        being: false,
+        x:null,
+        y: null,
+        width: 30,
+        height: 30,
+        type: 0,//null
+        time: 0,
+        maxTime: 100,
+    }
+    this.timeNew = 5//250;
+    this.countTimeNew = 0;
+    this.bonusArr = [];
+    this.init = function ()
+    {
+        for (let i = 0; i < this.quantityBonus;i++)
+        {
+            let bonusOne = JSON.parse(JSON.stringify(this.bonus));
+            this.bonusArr.push(bonusOne);
+            if (i<this.quantityBonusMin)  this.new();
+        }
+        console.log('bonuses', this.bonusArr);
+    }
+    this.draw = function () 
+    {
+        for (let i = 0; i < this.bonusArr.length;i++)
+        {
+            if (this.bonusArr[i].being==true)
+            {
+                let nameImage = null;
+                switch(this.bonusArr[i].type)
+                {
+                    case 0: nameImage = 'patrons'; break;
+                    case 1: nameImage = 'energy'; break;
+                    case 2: nameImage = "HP"; break;
+                }
+                drawSprite(context,imageArr.get(nameImage),
+                    this.bonusArr[i].x,this.bonusArr[i].y,camera,scale)
+
+            }
+
+        }
+    }
+    this.new = function ()
+    {
+        for (let i = 0; i < this.quantityBonus;i++)
+        {
+            if (this.bonusArr[i].being==false)
+            {
+                let x = null;
+                let y = null;
+                let obj = {};
+                do {
+                    x = randomInteger(map.x, map.x + map.width);
+                    y = randomInteger(map.y, map.y + map.height);
+                    obj = {
+                        x:x,
+                        y:y,
+                        width: this.bonus.width,
+                        height: this.bonus.height,
+                    }
+                } while (checkCollisionArr(obj,wallArr)!=-1 ||
+                        checkCollisionArr(obj,panzerArr)!=-1 ||
+                        checkCollisionArr(obj,this.bonusArr)!=-1);
+                this.bonusArr[i].being = true;
+                this.bonusArr[i].x = x;
+                this.bonusArr[i].y = y;
+                this.bonusArr[i].type = randomInteger(0, 2);
+                break;
+            }
+        }
+    }
+    this.update=function()
+    {
+        this.countTimeNew++;
+        if (this.countTimeNew>=this.timeNew)
+        {
+            this.new();
+            this.countTimeNew = 0;
+        }
+        for (let i = 0; i < this.bonusArr.length;i++)
+        {
+            for (let j = 0; j < panzerArr.length;j++)
+            {
+                if (checkCollision(this.bonusArr[i],panzerArr[j]))
+                {
+                    this.bonusArr[i].being = false;
+                    switch (this.bonusArr[i].type)
+                    {
+                        case 0: panzerArr[j].countPatrons += 10; break;
+                        case 1: panzerArr[j].energy += 200; break;
+                        case 2: panzerArr[j].HP += 200; break;
+                        
+                    }
+                    if (panzerArr[j].energy > panzerArr[j].maxEnergy) 
+                    {
+                        panzerArr[j].energy = panzerArr[j].maxEnergy;
+                    }
+                    if (panzerArr[j].HP > panzerArr[j].maxHP) 
+                    {
+                        panzerArr[j].HP = panzerArr[j].maxHP;
+                    }
+                }
+            }
+        }
+    }
+}
+
 var Genes = function () {
     this.quantityCommand = 48;
     this.typeDataValue = [
@@ -382,7 +499,7 @@ var Genes = function () {
                
             }
             //alert(randArr[0]);
-            console.log(randArr);
+            //console.log(randArr);
             let commandOne = JSON.parse(JSON.stringify(this.command));
             commandOne.name = this.commandDescr[R1].name;
             for (let k = 0; k < randArr.length;k++)
@@ -427,9 +544,37 @@ window.addEventListener('load', function () {
         update();
     },16);
 });
+function loadImageArr()// загрузить массив изображений
+{
+    // заполняем массив изображений именами
+    for (let value of nameImageArr  )
+    {
+        let image=new Image();
+        image.src="img/"+value+".png";        imageArr.set(value,image);
+    }
+    // проверяем загружены ли все изображения
+    for (let pair of imageArr  )
+    {
+             imageArr.get(pair[0]).onload = function() {
+                   countLoadImage++;
+                   //console.log(imageArr);
+                   console.log(countLoadImage);
+                   if (countLoadImage==imageArr.size) 
+                   {
+                       imageLoad=true;
+                    //  console.log(imageArr);
+                   } // если загруженны все ищображения
+             }
+             imageArr.get(pair[0]).onerror = function() {   
+                   alert("во время загрузки произошла ошибка");
+                   //alert(pair[0].name);
+                   
+             }
+     }  
+}
 function preload() 
 {
-    
+    loadImageArr();
 }
 function create()
 {
@@ -442,7 +587,7 @@ function create()
     canvas.setAttribute('height',canvasHeight);
     canvas.style.setProperty('left', (window.innerWidth - canvas.width)/2 + 'px'); 
     canvas.style.setProperty('top', (window.innerHeight - canvas.height) / 2 + 'px');*/ 
-    // ������� ������ ������ � ��������� �� ��������� �� ������ ����� �������
+    // создаем список цветов в градиенте от красновго до синего через зеленый
     for (let i = 0; i < quantityColor;i++)
     {
         let R = 0;
@@ -474,17 +619,18 @@ function create()
         colorArr.push(color);
     }
     console.log(colorArr);
-    // �������������� �����
+    // инициализируем стены
     for (let i = 0; i < quantityWall;i++)
     {
         let wallOne=JSON.parse(JSON.stringify(wall));
         let x = randomInteger(0,Math.trunc(map.width / wallOne.width)-1);
         let y = randomInteger(0,Math.trunc(map.height / wallOne.width)-1);;
+        wallOne.being = true;
         wallOne.x = x * wallOne.width;
         wallOne.y = y * wallOne.width;
         wallArr.push(wallOne);
     }
-    // ������������� �����
+    // инициализиуем танки
     for (let i = 0; i < quantityPanzer;i++)
     {
         let panzerOne = JSON.parse(JSON.stringify(panzer));
@@ -511,6 +657,8 @@ function create()
     bullets.init();
     burst = new Burst();
     burst.init();
+    bonuses = new Bonuses();
+    bonuses.init();
     genes = new Genes();
     genes.initCommandRand();
     //console.log(wallArr);
@@ -590,10 +738,11 @@ function drawAll()
     {
         drawWall(wallArr[i]);
     }
+    bonuses.draw();
     bullets.drawBullets(context);
     burst.draw();
     context.fillStyle = 'red';
-    context.fillText(mouseX+' '+mouseY, 1,20);
+    context.fillText(Math.trunc(mouseX)+' '+Math.trunc(mouseY), 1,20);
     for (let i = 0; i < panzerArr.length;i++)
     {
         if (panzerArr[i].being==true)
@@ -628,6 +777,12 @@ function drawAll()
     context.fillRect(camera.width,1,widthSide,screenHeight);
     context.fillRect(1,camera.height,screenWidth,heightSide);
     genes.draw(context);
+
+    context.font='25px Arial';
+    context.fillStyle = 'red';
+    context.fillText("Steps: "+countLoopIter, 1,620);
+    
+
     
 }
 function drawWall(wall)
@@ -650,7 +805,7 @@ function drawPanzer(panzer,select=false)
         context.strokeStyle=panzer.color;
     }
     
-    // ������� ���� �����
+    // врашаем тело танка
     context.save();
   
     context.translate(panzer.x*scale + panzer.width / 2*scale-camera.x, 
@@ -664,7 +819,7 @@ function drawPanzer(panzer,select=false)
                 -(panzer.y*scale + panzer.height / 2*scale-camera.y)); // translate back
 
     context.lineWidth = 1;
-    //������ ���� �����
+    //рисуем тело танка
     context.strokeRect(panzer.x*scale-camera.x, panzer.y*scale-camera.y,
             panzer.width*multSide*scale, panzer.height*scale);
     let addX = panzer.width - panzer.width * multSide;
@@ -675,7 +830,7 @@ function drawPanzer(panzer,select=false)
                     (panzer.width-panzer.width*multSide*2)*scale,
                     (panzer.height-panzer.height*multSide*2)*scale);
 
-    // ������ ������ �����
+    // рисуем кружок башни
     context.beginPath();
     context.arc(panzer.x*scale-camera.x + panzer.width / 2*scale,
                 panzer.y*scale-camera.y + panzer.height / 2*scale,
@@ -684,12 +839,20 @@ function drawPanzer(panzer,select=false)
 
     context.restore();
     
-    // ������ �����
+    // рисуем пушку
     context.beginPath();
     context.lineWidth = 3;
     context.moveTo(panzer.towerX*scale-camera.x,panzer.towerY*scale-camera.y);
     context.lineTo(panzer.towerX1*scale-camera.x,panzer.towerY1*scale-camera.y);
     context.stroke();  
+}
+function drawSprite(context,image,x,y,camera,scale)// функция вывода спрайта на экран
+{
+    if(!context || !image) return;
+    context.save();
+    context.scale(scale,scale);
+    context.drawImage(image,x/**scale*/-camera.x/scale,y/**scale*/-camera.y/scale);
+    context.restore();
 }
 function cameraMove()
 {
@@ -743,6 +906,7 @@ function cameraMove()
 function update() 
 {
   
+    let countBeingPanzer = 0;
     if (modeGame == 'GOD') cameraMove();
     for (let i = 0; i < panzerArr.length;i++)
     {
@@ -765,6 +929,8 @@ function update()
             collisionPanzerToPanzer(panzerArr[i],i)
         
             updateStatePanzer(panzerArr[i]);
+            countBeingPanzer++;
+
         }
         
     }
@@ -772,6 +938,7 @@ function update()
     bullets.update();
     bullets.collisionWalls(wallArr);
     burst.update();
+    bonuses.update();
 
     if (keyUpDuration('NumpadSubtract',100)==true)
     {
@@ -782,6 +949,9 @@ function update()
         scale*=1.333;
        // alert(scale);
     }
+    
+    
+    if (countBeingPanzer>0)countLoopIter++;
     //console.log(mouseX, mouseY);
 }
 function updateStatePanzer(panzer)
@@ -860,17 +1030,18 @@ function controlHumanPanzer(panzer)
         y: panzer.y + panzer.height / 2,
     }
     let angleAim=angleIm(rotateXY.x,rotateXY.y,mouseX,mouseY);
-    // ������ ������������ ����� �����                             
+    // плавно поварачиваем башню танка                             
     panzer.angleTower=movingToAngle(panzer.angleTower,angleAim,100);
     //console.log(panzer.angleTower);
     if (panzer.countAttack<panzer.countAttack+20)
     {
         panzer.countAttack++;
     }
-    if (checkMouseLeft() && panzer.countAttack>panzer.timeAttack)
+    if (checkMouseLeft() && panzer.countAttack>panzer.timeAttack && panzer.countPatrons>0)
     {
         panzer.countAttack = 0;
         bullets.shot(panzer.towerX1,panzer.towerY1,panzer.angleTower,100);
+        panzer.countPatrons--;
     }  
     panzer.energy -= minusEnergyMove/40;
 }
@@ -928,10 +1099,11 @@ function completeGenesPanzer(panzer)
         }
         if (value==0)
         {
-            if (panzer.countAttack>=panzer.timeAttack)
+            if (panzer.countAttack>=panzer.timeAttack && panzer.countPatrons>0)
             {
                 bullets.shot(panzer.towerX1,panzer.towerY1,panzer.angleTower,30);
                 panzer.countAttack = 0;
+                panzer.countPatrons--;
             }
         }
     }
