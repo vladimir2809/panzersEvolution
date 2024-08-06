@@ -23,12 +23,15 @@ var quantityWall = 64;
 
 var modeGame = 'GOD';// 'GOD', 'HERO', 'EGREGOR'
 var numSelectPanzer = 0;
+var numGenesPanzer = 0;
 var distAttack = 300;
 var minusEnergyMove = 2;
 var imageArr=new Map();// массив картинок
 var nameImageArr = ['energy','patrons','HP'];
 var countLoadImage=0;// количество загруженных картинок
 var countLoopIter = 0;
+var sensorValue = 0;
+var helperArr = [];
 var panzer = {
     being: true,
     x:1,
@@ -56,6 +59,11 @@ var panzer = {
 
     genes: null,
     selectCommand:0,
+    sensor: {
+        bonus: null,
+        wall: null,
+        enemy: null,
+    }
 }
 var wall = {
     being:false,
@@ -80,6 +88,52 @@ var camera = {
 }
 var  widthSide = screenWidth - camera.width;
 var  heightSide = screenHeight - camera.height;
+var Helper = function (x,y,color){
+    this.x = x;
+    this.y = y;
+    this.width = 36;
+    this.height = 35;
+    this.color = color;
+    this.flagDrag = false;
+    this.ofsX = 0;
+    this.ofsY = 0;
+    this.draw=function()
+    {
+        context.fillStyle = this.color
+        context.fillRect(this.x*scale-camera.x,this.y*scale-camera.y,
+                this.width*scale,this.height*scale);
+    }
+    this.update=function ()
+    {
+        if (checkInObj(this,mouseX/scale+camera.x,mouseY/scale+camera.y)==true &&  checkMouseLeft()==true 
+            && this.flagDrag==false)
+        {
+            this.flagDrag = true;
+            this.ofsX = this.x - mouseX / scale + camera.x;
+            this.ofsY = this.y - mouseY / scale + camera.y;
+        }
+        if (this.flagDrag==true && checkMouseLeft()==false)
+        {
+            this.flagDrag = false;
+        }
+        if (this.flagDrag==true)
+        {
+            this.x = mouseX / scale + camera.x+this.ofsX;
+            this.y = mouseY / scale + camera.y+this.ofsY;
+            if (checkPressKey('Minus') && this.width>8)
+            {
+                this.width--;
+                this.height--;
+            }
+            if (checkPressKey('Equal') && this.width<80)
+            {
+                this.width++;
+                this.height++;
+            }
+        }
+        
+    }
+}
 var Bullets = function () { 
    
 
@@ -416,6 +470,24 @@ var Bonuses = function () {
 
 var Genes = function () {
     this.quantityCommand = 48;
+    this.sensor = {
+        bonus: null,
+        wall: null,
+        enemy: null,
+    }
+
+    this.memory={
+        M1: 0,
+        M2: 0,
+        M3: 0,
+        M4: 0,
+
+        MC1: 0,
+        MC2: 0,
+        MC3: 0,
+        MC4: 0,
+    }
+
     this.typeDataValue = [
         {
             name: 'numMin0Max7',
@@ -529,6 +601,44 @@ var Genes = function () {
 
             }
         }
+        context.font = '12px Arial';
+        let index = 0;
+        addX = 45;
+        let multY = 18;
+        colorText = 'white';
+        x += 85;
+        for (prop in this.sensor)
+        {
+            context.fillStyle = "blue";
+            context.fillRect(x + /*85 +*/ addX * 2-4, y + index * multY + multY/3+1, 30, 15);
+            context.fillStyle = colorText;
+            context.fillText(prop,x+/*85+*/addX,y+index*multY+multY);
+
+            context.fillText(this.sensor[prop],x+/*85+*/addX*2,y+index*multY+multY);
+            index++;
+        }
+        index = 0;
+        y = 100;
+        for (prop in this.memory)
+        {
+            context.fillStyle = "blue";
+            context.fillRect(x + /*85 +*/ addX * 2-4, y + index * multY + multY/3+1, 30, 15);
+            context.fillStyle = colorText;
+            context.fillText(prop,x+/*85+*/addX,y+index*multY+multY);
+
+            context.fillText(this.memory[prop],x+/*85+*/addX*2,y+index*multY+multY);
+            index++;
+            if (index == 4) y += 20;
+        }
+    }
+    this.setData=function(data)
+    {
+        console.log(data);
+        this.commandArr = [];
+        for (let i = 0;i< data.commandArr.length;i++)
+        {
+            this.commandArr.push(data.commandArr[i]);
+        }
     }
 
 }
@@ -580,7 +690,7 @@ function create()
 {
     canvas = document.getElementById("canvas");
     context = canvas.getContext("2d");
-    initKeyboardAndMouse(['KeyA', 'KeyW', 'KeyS', 'KeyD',"NumpadSubtract",'NumpadAdd']);
+    initKeyboardAndMouse(['KeyA', 'KeyW', 'KeyS', 'KeyD',"NumpadSubtract",'NumpadAdd','Minus','Equal']);
     srand(2);
     updateSize();
 /*    canvas.setAttribute('width',canvasWidth);
@@ -647,7 +757,10 @@ function create()
         panzerOne.color = colorArr[index];
         gs = new Genes();
         gs.initCommandRand();
-        panzerOne.genes = gs.commandArr;
+        panzerOne.genes = {
+            commandArr:gs.commandArr,
+            memory: gs.memory,
+        }
         //console.log(panzerOne);
         panzerArr.push(panzerOne);
         updateStatePanzer(panzerArr[i]);
@@ -661,6 +774,9 @@ function create()
     bonuses.init();
     genes = new Genes();
     genes.initCommandRand();
+    helperArr[0] = new Helper(100,100,'green');
+    helperArr[1] = new Helper(150,150,'blue');
+    helperArr[2] = new Helper(200,200,'red');
     //console.log(wallArr);
 }
 window.onresize = function()
@@ -773,6 +889,12 @@ function drawAll()
 
     }*/
    // context.restore();
+    for (let i = 0; i < helperArr.length;i++)
+    {
+        helperArr[i].draw();
+    }
+  /*  context.fillStyle = 'green';
+    context.fillRect(helper.x-camera.x,helper.y-camera.y,helper.width,helper.height);*/
     context.fillStyle = 'gray';
     context.fillRect(camera.width,1,widthSide,screenHeight);
     context.fillRect(1,camera.height,screenWidth,heightSide);
@@ -781,8 +903,16 @@ function drawAll()
     context.font='25px Arial';
     context.fillStyle = 'red';
     context.fillText("Steps: "+countLoopIter, 1,620);
-    
 
+    context.font='25px Arial';
+    context.fillStyle = 'blue';
+    context.fillText("numGenesPanzer: "+numGenesPanzer, 1,650);
+   
+    context.font='25px Arial';
+    context.fillStyle = 'green';
+    context.fillText("Sensor: "+sensorValue, 1,690);
+    
+   
     
 }
 function drawWall(wall)
@@ -934,12 +1064,23 @@ function update()
         }
         
     }
+
     killedPanzers();
     bullets.update();
     bullets.collisionWalls(wallArr);
     burst.update();
     bonuses.update();
-
+    if (modeGame=='GOD')
+    {
+        for (let i = 0; i < panzerArr.length;i++)
+        {
+            if (checkInObj(panzerArr[i],mouseX/scale+camera.x,mouseY/scale+camera.y))
+            {
+                numGenesPanzer = i;
+                genes.setData(panzerArr[i].genes);
+            }
+        }
+    }
     if (keyUpDuration('NumpadSubtract',100)==true)
     {
         scale*=0.75;
@@ -952,6 +1093,12 @@ function update()
     
     
     if (countBeingPanzer>0)countLoopIter++;
+    sensorValue = checkObjVisible(helperArr[0], helperArr[2]);
+    for (let i = 0; i < helperArr.length;i++)
+    {
+        helperArr[i].update();
+
+    }
     //console.log(mouseX, mouseY);
 }
 function updateStatePanzer(panzer)
@@ -972,6 +1119,38 @@ function killedPanzers()
             panzerArr[i].being = false;
         }
     }
+}
+function updateSensorPanzer(panzer)
+{
+    
+}
+function checkObjVisible(panzer,obj)
+{
+    let dist = 100;
+    if (panzer.x<obj.x+obj.width && panzer.x+panzer.width>obj.x)
+    {
+        if (panzer.y>obj.y)
+        {
+            return 1;
+        }
+        else if (panzer.y<obj.y)
+        {
+            return 3;
+        }
+    }
+    if (panzer.y<obj.y+obj.height && panzer.y+panzer.height>obj.y)
+    {
+        if (panzer.x>obj.x)
+        {
+            return 4;
+        }
+        else if (panzer.x<obj.x)
+        {
+            return 2;
+        }
+    }
+   
+    return null;
 }
 function controlHumanPanzer(panzer)
 {
@@ -1049,9 +1228,9 @@ function completeGenesPanzer(panzer)
 {
     let select = panzer.selectCommand;
     //console.log(panzer.selectCommand);
-    if (panzer.genes[select].name=='move')
+    if (panzer.genes.commandArr[select].name=='move')
     {
-        value = panzer.genes[select].values[0];
+        value = panzer.genes.commandArr[select].values[0];
         let minusEnergy = minusEnergyMove / 10;
         if (value==1 && panzer.dir!=0)
         {
