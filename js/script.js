@@ -1131,10 +1131,12 @@ function checkObjVisible(panzer,obj)
     {
         if (panzer.y>obj.y)
         {
+            if (checkBarrierVisible(panzer,obj,[helperArr[1]],1)==false)
             return 1;
         }
         else if (panzer.y<obj.y)
         {
+            if (checkBarrierVisible(panzer,obj,[helperArr[1]],3)==false)
             return 3;
         }
     }
@@ -1142,15 +1144,38 @@ function checkObjVisible(panzer,obj)
     {
         if (panzer.x>obj.x)
         {
+            if (checkBarrierVisible(panzer,obj,[helperArr[1]],4)==false)
             return 4;
         }
         else if (panzer.x<obj.x)
         {
+            if (checkBarrierVisible(panzer,obj,[helperArr[1]],2)==false)
             return 2;
         }
     }
    
     return null;
+}
+function checkBarrierVisible(objStart,objFinish,arrBarrier,side)
+{
+    let addXY ={x:0,y:0};
+    let dist = 0;
+    if (side == 1) { dist = objStart.y - objFinish.y; addXY.y=-1}
+    if (side == 2) { dist = objFinish.x - objStart.x; addXY.x=1 }
+
+    if (side == 3) { dist = objFinish.y - objStart.y; addXY.y=1 }
+    if (side == 4) { dist = objStart.x - objFinish.x; addXY.x=-1}
+    let objIter = JSON.parse(JSON.stringify(objStart));
+    for (let i = 0; i < dist;i++)
+    {
+        objIter.x += addXY.x;
+        objIter.y += addXY.y;
+        for (let j = 0; j < arrBarrier.length;j++)
+        {
+            if (checkCollision(arrBarrier[j], objIter) == true) return true;
+        }
+    }
+    return false;
 }
 function controlHumanPanzer(panzer)
 {
@@ -1291,6 +1316,7 @@ function completeGenesPanzer(panzer)
     panzer.selectCommand = select;
     panzer.energy -= minusEnergyMove / 40;;
 }
+
 function collisionPanzerWall(panzer)
 {
     for (let i = 0; i < wallArr.length;i++)
