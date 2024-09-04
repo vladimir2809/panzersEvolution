@@ -21,7 +21,7 @@ var quantityBurst = 500;
 var quantityPanzer = 64;
 var quantityWall = 64;
 
-var modeGame = 'GOD';// 'GOD', 'HERO', 'EGREGOR'
+var modeGame = 'HERO';// 'GOD', 'HERO', 'EGREGOR'
 var numSelectPanzer = 0;
 var numGenesPanzer = 0;
 var distAttack = 300;
@@ -77,8 +77,8 @@ var wall = {
 var map = {
     x:0,
     y:0,
-    width: 800*4,
-    height: 600*4,
+    width: 800*4,//4,
+    height: 600*4,//4,
 }
 var camera = {
     x:0,
@@ -1033,6 +1033,31 @@ function cameraMove()
         }
     }
 }
+function cameraFocusXY(x,y,map)// следить камерой за определеной точкой
+{
+    camera.focusX=x;
+    camera.focusY=y;
+    camera.x = x - camera.width / 2;
+    camera.y = y - camera.height / 2;
+    if (x<map.x+(camera.width/2)/scale) camera.x=map.x;
+    else if (x>map.x+(map.width-camera.width/2/scale)) 
+    {
+            
+        camera.x=map.x+map.width-camera.width/scale;
+        //alert("123");
+    }
+    if (y<map.y+(camera.height/2)/scale) camera.y=map.y;
+    else if (y>map.x+map.height-camera.height/2/scale) camera.y=map.y+map.height-camera.height/scale;;
+    if (camera.height/scale > screenHeight)
+    {
+        camera.y=0;
+    }
+    if (camera.width/scale > screenWidth)
+    {
+        camera.x=0;
+        ///   console.log(camera.width/2/scale+"   "+screenWidth);
+    }
+}
 function update() 
 {
   
@@ -1046,6 +1071,7 @@ function update()
             if (numSelectPanzer==i && modeGame=='HERO')
             {
                 controlHumanPanzer(panzerArr[i]);
+                cameraFocusXY(panzerArr[i].x, panzerArr[i].y, map);
      
           
             }
@@ -1233,7 +1259,7 @@ function controlHumanPanzer(panzer)
         x: panzer.x + panzer.width / 2,
         y: panzer.y + panzer.height / 2,
     }
-    let angleAim=angleIm(rotateXY.x,rotateXY.y,mouseX,mouseY);
+    let angleAim=angleIm(rotateXY.x,rotateXY.y,mouseX+camera.x,mouseY+camera.y);
     // плавно поварачиваем башню танка                             
     panzer.angleTower=movingToAngle(panzer.angleTower,angleAim,100);
     //console.log(panzer.angleTower);
