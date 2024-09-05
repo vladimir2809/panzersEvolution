@@ -21,7 +21,7 @@ var quantityBurst = 500;
 var quantityPanzer = 64;
 var quantityWall = 64;
 
-var modeGame = 'HERO';// 'GOD', 'HERO', 'EGREGOR'
+var modeGame = 'GOD';// 'GOD', 'HERO', 'EGREGOR'
 var numSelectPanzer = 0;
 var numGenesPanzer = 0;
 var distAttack = 300;
@@ -40,8 +40,8 @@ var panzer = {
     height: 35,
     sizeTower: 7,
     color: 'white',
-    angleBody: 0,
-    angleTower: 0,
+    angleBody: 270,
+    angleTower: 270,
     dir:0,
     speed:10,
     maxHP: 1000,
@@ -56,7 +56,6 @@ var panzer = {
     towerLength: 10,
     timeAttack: 30,
     countAttack: 0,
-
     genes: null,
     selectCommand:0,
     sensor: {
@@ -1071,9 +1070,6 @@ function update()
             if (numSelectPanzer==i && modeGame=='HERO')
             {
                 controlHumanPanzer(panzerArr[i]);
-                cameraFocusXY(panzerArr[i].x, panzerArr[i].y, map);
-     
-          
             }
             else
             {
@@ -1085,6 +1081,12 @@ function update()
             collisionPanzerToPanzer(panzerArr[i],i)
         
             updateStatePanzer(panzerArr[i]);
+            if (modeGame=='HERO')
+            {
+
+                cameraFocusXY(panzerArr[numSelectPanzer].x, 
+                            panzerArr[numSelectPanzer].y, map);
+            }
             countBeingPanzer++;
 
         }
@@ -1119,7 +1121,8 @@ function update()
     
     
     if (countBeingPanzer>0)countLoopIter++;
-    sensorValue = checkObjVisible(helperArr[0], helperArr[2]);
+    let barrierArr = wallArr.concat([helperArr[1]]);
+    sensorValue = checkObjVisible(helperArr[0], helperArr[2],barrierArr);
     for (let i = 0; i < helperArr.length;i++)
     {
         helperArr[i].update();
@@ -1150,32 +1153,32 @@ function updateSensorPanzer(panzer)
 {
     
 }
-function checkObjVisible(panzer,obj)
+function checkObjVisible(panzer,obj,barrierArr)
 {
-    let dist = 100;
+    let dist = 150;
     if (panzer.x<obj.x+obj.width && panzer.x+panzer.width>obj.x)
     {
-        if (panzer.y>obj.y)
+        if (panzer.y>obj.y && panzer.y-obj.y<dist)
         {
-            if (checkBarrierVisible(panzer,obj,[helperArr[1]],1)==false)
+            if (checkBarrierVisible(panzer,obj,barrierArr,1)==false)
             return 1;
         }
-        else if (panzer.y<obj.y)
+        else if (panzer.y<obj.y && obj.y - panzer.y<dist)
         {
-            if (checkBarrierVisible(panzer,obj,[helperArr[1]],3)==false)
+            if (checkBarrierVisible(panzer,obj,barrierArr,3)==false)
             return 3;
         }
     }
     if (panzer.y<obj.y+obj.height && panzer.y+panzer.height>obj.y)
     {
-        if (panzer.x>obj.x)
+        if (panzer.x>obj.x && panzer.x-obj.x<dist)
         {
-            if (checkBarrierVisible(panzer,obj,[helperArr[1]],4)==false)
+            if (checkBarrierVisible(panzer,obj,barrierArr,4)==false)
             return 4;
         }
-        else if (panzer.x<obj.x)
+        else if (panzer.x<obj.x && obj.x-panzer.x<dist)
         {
-            if (checkBarrierVisible(panzer,obj,[helperArr[1]],2)==false)
+            if (checkBarrierVisible(panzer,obj,barrierArr,2)==false)
             return 2;
         }
     }
@@ -1206,7 +1209,7 @@ function checkBarrierVisible(objStart,objFinish,arrBarrier,side)
 function controlHumanPanzer(panzer)
 {
     let minusEnergy = minusEnergyMove / 10;;
-    if (checkPressKey('KeyW') == true && panzer.dir!=0)
+    if (checkPressKey('KeyW') == true && panzer.dir!=0 )
     {
         panzer.dir = 0; 
         panzer.angleTower = panzer.angleBody = 270;
@@ -1225,7 +1228,7 @@ function controlHumanPanzer(panzer)
         panzer.energy -= minusEnergy;
     }
 
-    if (checkPressKey('KeyA') == true && panzer.dir!=3) 
+    if (checkPressKey('KeyA') == true && panzer.dir!=3 ) 
     {
         panzer.dir=3;
         panzer.angleTower = panzer.angleBody = 180;
