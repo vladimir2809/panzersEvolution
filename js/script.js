@@ -21,7 +21,7 @@ var quantityBurst = 500;
 var quantityPanzer = 64;
 var quantityWall = 64;
 
-var modeGame = 'GOD';// 'GOD', 'HERO', 'EGREGOR'
+var modeGame = 'HERO';// 'GOD', 'HERO', 'EGREGOR'
 var numSelectPanzer = 0;
 var numGenesPanzer = 0;
 var distAttack = 300;
@@ -53,6 +53,8 @@ var panzer = {
     towerY: null,
     towerX1: null,
     towerY1: null,
+    centerX:null,
+    centerY: null,
     towerLength: 10,
     timeAttack: 30,
     countAttack: 0,
@@ -64,6 +66,14 @@ var panzer = {
         enemy: null,
     }
 }
+// обьект линия
+var line={
+  x:null,
+  y:null,
+  x1:null,
+  y1:null,
+  numObject:0,
+};
 var wall = {
     being:false,
     x:null,
@@ -72,6 +82,7 @@ var wall = {
     height: size,
     type: 0,
     color: 'grey',
+    lineArr:[],// массив линий для определение пересечения с прямой при расчетах
 }
 var map = {
     x:0,
@@ -630,14 +641,15 @@ var Genes = function () {
             if (index == 4) y += 20;
         }
     }
-    this.setData=function(data)
+    this.setData=function(data,sensor)
     {
-        console.log(data);
+     //   console.log(data);
         this.commandArr = [];
         for (let i = 0;i< data.commandArr.length;i++)
         {
             this.commandArr.push(data.commandArr[i]);
         }
+        this.sensor =JSON.parse(JSON.stringify(sensor))
     }
 
 }
@@ -737,8 +749,11 @@ function create()
         wallOne.being = true;
         wallOne.x = x * wallOne.width;
         wallOne.y = y * wallOne.width;
+        wallOne.lineArr = calcLineArr(wallOne);
         wallArr.push(wallOne);
+
     }
+    console.log(wallArr);
     // инициализиуем танки
     for (let i = 0; i < quantityPanzer;i++)
     {
@@ -888,6 +903,23 @@ function drawAll()
 
     }*/
    // context.restore();
+    for (let i = 0; i < panzerArr.length;i++)
+    {
+        if (i != numSelectPanzer &&
+            crossingTwoPoint(panzerArr[numSelectPanzer].centerX,
+                panzerArr[numSelectPanzer].centerY,
+                panzerArr[i].centerX,panzerArr[i].centerY,wallArr)==false)
+        {
+            context.beginPath();
+            context.strokeStyle = "green";
+            //context.lineWidth = 3;
+            context.moveTo(panzerArr[numSelectPanzer].centerX*scale-camera.x,
+                            panzerArr[numSelectPanzer].centerY*scale-camera.y);
+            context.lineTo(panzerArr[i].centerX*scale-camera.x,panzerArr[i].centerY*scale-camera.y);
+            context.stroke(); 
+        }
+    }
+    
     for (let i = 0; i < helperArr.length;i++)
     {
         helperArr[i].draw();
@@ -1075,7 +1107,10 @@ function update()
             {
                 completeGenesPanzer(panzerArr[i]);
             }
-        
+
+            let barrierArr=updateBarrierVisible();
+            updateSensorPanzer(panzerArr[i],barrierArr)
+
             collisionPanzerWall(panzerArr[i]);
             collisionRectangleMap(panzerArr[i]);
             collisionPanzerToPanzer(panzerArr[i],i)
@@ -1098,16 +1133,17 @@ function update()
     bullets.collisionWalls(wallArr);
     burst.update();
     bonuses.update();
-    if (modeGame=='GOD')
+  //  if (modeGame=='GOD')
     {
-        for (let i = 0; i < panzerArr.length;i++)
+      //  for (let i = 0; i < panzerArr.length;i++)
         {
-            if (checkInObj(panzerArr[i],mouseX/scale+camera.x,mouseY/scale+camera.y))
+           // if (checkInObj(panzerArr[i],mouseX/scale+camera.x,mouseY/scale+camera.y))
             {
-                numGenesPanzer = i;
-                genes.setData(panzerArr[i].genes);
+                numGenesPanzer = numSelectPanzer;
+                genes.setData(panzerArr[numSelectPanzer].genes,panzerArr[numSelectPanzer].sensor);
             }
         }
+
     }
     if (keyUpDuration('NumpadSubtract',100)==true)
     {
@@ -1121,8 +1157,23 @@ function update()
     
     
     if (countBeingPanzer>0)countLoopIter++;
+    /*
+     ВНИМАНИЕ НЕОБХОДИМО В PANZERARR2 ДОБАВЛЯТЬ ТОЛЬКО ТАНКИ С BEING TRUE !!!
+    */
+    //let panzerArr2 = JSON.parse(JSON.stringify(panzerArr));
+
+    //panzerArr2.splice(numSelectPanzer, 1);
+/*    let panzerArr2 = [];
+    for (let i = 0; i < panzerArr.length;i++)
+    {
+        if (panzerArr[i].being==true && i!=numSelectPanzer)
+        {
+            panzerArr2.push(panzerArr[i]);
+        }
+    }
     let barrierArr = wallArr.concat([helperArr[1]]);
-    sensorValue = checkObjVisible(helperArr[0], helperArr[2],barrierArr);
+    barrierArr = barrierArr.concat(panzerArr2);*/
+    //sensorValue = checkObjVisible(helperArr[0], helperArr[2],barrierArr);
     for (let i = 0; i < helperArr.length;i++)
     {
         helperArr[i].update();
@@ -1134,6 +1185,8 @@ function updateStatePanzer(panzer)
 {
     let centerX = (panzer.x + panzer.width / 2)//*scale
     let centerY = (panzer.y + panzer.height / 2)//*scale;
+    panzer.centerX = centerX;
+    panzer.centerY = centerY;
     panzer.towerY = (centerY + Math.sin((Math.PI / 180) * panzer.angleTower) * panzer.sizeTower)//*scale;
     panzer.towerX = (centerX + Math.cos((Math.PI / 180) * panzer.angleTower) * panzer.sizeTower)//*scale;
     panzer.towerY1 = panzer.towerY +( Math.sin((Math.PI / 180) * panzer.angleTower) * panzer.towerLength)//*scale;
@@ -1149,13 +1202,39 @@ function killedPanzers()
         }
     }
 }
-function updateSensorPanzer(panzer)
+
+function updateBarrierVisible()
 {
+    let panzerArr2 = [];
+    for (let i = 0; i < panzerArr.length;i++)
+    {
+        if (panzerArr[i].being==true && i!=numSelectPanzer)
+        {
+            panzerArr2.push(panzerArr[i]);
+        }
+    }
+    let barrierArr = wallArr.concat([helperArr[1]]);
+    barrierArr = barrierArr.concat(panzerArr2);
+    return barrierArr;
+}
+function updateSensorPanzer(panzer,barrierArr)
+{
+ 
+    for (let i = 0; i < bonuses.bonusArr.length;i++)
+    {
+        let bonus = bonuses.bonusArr[i];
+        panzer.sensor.bonus = checkObjVisible(panzer, bonus,barrierArr);
+        if (panzer.sensor.bonus!=null)
+        {
+            break;
+        }
+    }
+    console.log(panzer.sensor.bonus);
     
 }
 function checkObjVisible(panzer,obj,barrierArr)
 {
-    let dist = 150;
+    let dist = 350;
     if (panzer.x<obj.x+obj.width && panzer.x+panzer.width>obj.x)
     {
         if (panzer.y>obj.y && panzer.y-obj.y<dist)
@@ -1451,3 +1530,6 @@ function collisionPanzerToPanzer(panzer,num)
     }
     return false;
 }
+/*
+ 6.09.2024 остановился на том что бы обновлялся сенсор бонуса у выбраннного танка
+ */

@@ -22,17 +22,17 @@ function crossLinePlayer(P1,P2)
     }
     return false;
 }
-function crossingTwoPoint(x1,y1,x2,y2)// проверяет могут ли 2 точки соединиться по прямой без препятсвий стен
+function crossingTwoPoint(x1,y1,x2,y2,wallArr)// проверяет могут ли 2 точки соединиться по прямой без препятсвий стен
 {
-    for (let i = 0; i < walls.wallArr.length;i++)
+    for (let i = 0; i < wallArr.length;i++)
     {
-        if (walls.wallArr[i].type==0)
+        if (wallArr[i].type==0)
         {
           //alert(55);
-            for (let j = 0; j < walls.wallArr[i].lineArr.length;j++)
+            for (let j = 0; j < wallArr[i].lineArr.length;j++)
             {
             
-                let line = walls.wallArr[i].lineArr[j];
+                let line = wallArr[i].lineArr[j];
                 if (IsCrossing(x1, y1, x2, y2,line.x,line.y,line.x1,line.y1)==true)
                 {
                     return true;
