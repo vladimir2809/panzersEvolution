@@ -18,8 +18,8 @@ var size = 40;
 var quantityColor = 64;
 var quantityBullet = 150;
 var quantityBurst = 500;
-var quantityPanzer = 64;
-var quantityWall = 64;
+var quantityPanzer =2// 64;
+var quantityWall = 10//64;
 
 var modeGame = 'HERO';// 'GOD', 'HERO', 'EGREGOR'
 var numSelectPanzer = 0;
@@ -87,8 +87,8 @@ var wall = {
 var map = {
     x:0,
     y:0,
-    width: 800*4,//4,
-    height: 600*4,//4,
+    width: 800*1,//4,
+    height: 600*1,//4,
 }
 var camera = {
     x:0,
@@ -905,14 +905,11 @@ function drawAll()
    // context.restore();
     for (let i = 0; i < panzerArr.length;i++)
     {
-        if (i != numSelectPanzer &&
-            crossingTwoPoint(panzerArr[numSelectPanzer].centerX,
-                panzerArr[numSelectPanzer].centerY,
-                panzerArr[i].centerX,panzerArr[i].centerY,wallArr)==false)
+        if (visibleEnemy(numSelectPanzer,i)!=true)
         {
             context.beginPath();
             context.strokeStyle = "green";
-            //context.lineWidth = 3;
+            context.lineWidth = 1;
             context.moveTo(panzerArr[numSelectPanzer].centerX*scale-camera.x,
                             panzerArr[numSelectPanzer].centerY*scale-camera.y);
             context.lineTo(panzerArr[i].centerX*scale-camera.x,panzerArr[i].centerY*scale-camera.y);
@@ -1109,7 +1106,7 @@ function update()
             }
 
             let barrierArr=updateBarrierVisible();
-            updateSensorPanzer(panzerArr[i],barrierArr)
+            updateSensorPanzer(panzerArr[i],i,barrierArr)
 
             collisionPanzerWall(panzerArr[i]);
             collisionRectangleMap(panzerArr[i]);
@@ -1217,7 +1214,7 @@ function updateBarrierVisible()
     barrierArr = barrierArr.concat(panzerArr2);
     return barrierArr;
 }
-function updateSensorPanzer(panzer,barrierArr)
+function updateSensorPanzer(panzer,numP,barrierArr)
 {
  
     for (let i = 0; i < bonuses.bonusArr.length;i++)
@@ -1229,8 +1226,49 @@ function updateSensorPanzer(panzer,barrierArr)
             break;
         }
     }
-    console.log(panzer.sensor.bonus);
+    /*console.log(panzer.sensor.bonus);*/
+    minDist = 1000000;
+    flagVis = false;
+    for (let i = 0; i < panzerArr.length;i++)
+    {
+        if (visibleEnemy(numP,i)==false)
+        {
+            dist = calcDist(panzerArr[numP].centerX, panzerArr[numP].centerY,
+                panzerArr[i].centerX, panzerArr[i].centerY);
+            flagVis = true;
+            if (dist<minDist)
+            {
+                panzer.sensor.enemy = angleIm(panzerArr[numP].centerX, panzerArr[numP].centerY,
+                            panzerArr[i].centerX, panzerArr[i].centerY);
+            }
+        }
+    }
+    if (flagVis==false)
+    {
+        panzer.sensor.enemy = null;
+    }
+
     
+    
+}
+function visibleEnemy(numP1,numP2)
+{
+    /*for (let i = 0; i < panzerArr.length;i++)
+    {*/
+    maxDist = 300;
+    dist = calcDist(panzerArr[numP1].centerX,panzerArr[numP1].centerY,
+                    panzerArr[numP2].centerX,panzerArr[numP2].centerY);
+    if (numP1 != numP2 && dist<maxDist && 
+        panzerArr[numP1].being==true &&
+        panzerArr[numP2].being==true &&
+        crossingTwoPoint(panzerArr[numP1].centerX,panzerArr[numP1].centerY,
+            panzerArr[numP2].centerX,panzerArr[numP2].centerY,wallArr)==false)
+    {
+        return false;
+    }
+    //}
+    return true;
+
 }
 function checkObjVisible(panzer,obj,barrierArr)
 {
