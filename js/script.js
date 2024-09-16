@@ -32,6 +32,7 @@ var countLoadImage=0;// количество загруженных картин
 var countLoopIter = 0;
 var sensorValue = 0;
 var helperArr = [];
+
 var panzer = {
     being: true,
     x:1,
@@ -49,6 +50,11 @@ var panzer = {
     maxEnergy: 1000,
     energy: 1000,
     countPatrons:10,
+    damage:10,// урон
+    accuracy:75,// точность 
+    speedAttack: 70,
+    timeAttack: 30,
+    countAttack: 0,
     towerX:null,
     towerY: null,
     towerX1: null,
@@ -56,8 +62,7 @@ var panzer = {
     centerX:null,
     centerY: null,
     towerLength: 10,
-    timeAttack: 30,
-    countAttack: 0,
+
     genes: null,
     selectCommand:0,
     sensor: {
@@ -65,6 +70,13 @@ var panzer = {
         wall: null,
         enemy: null,
     }
+}
+var maxParam = {
+    maxHP:2000,
+    speed:100,
+    damage: 300,
+    accuracy: 100,
+    speedAttack: 300,
 }
 // обьект линия
 var line={
@@ -939,7 +951,7 @@ function drawAll()
     context.font='25px Arial';
     context.fillStyle = 'green';
     context.fillText("Sensor: "+sensorValue, 1,690);
-    
+    drawParamPanzer(300,650,numSelectPanzer)
    
     
 }
@@ -1011,6 +1023,35 @@ function drawSprite(context,image,x,y,camera,scale)// функция вывод�
     context.scale(scale,scale);
     context.drawImage(image,x/**scale*/-camera.x/scale,y/**scale*/-camera.y/scale);
     context.restore();
+}
+function drawParamPanzer(x,y,numP)
+{
+    let count = 0;
+    let addY = 20;
+    for (param in maxParam)
+    {
+        context.font='15px Arial';
+        context.fillStyle = 'black';
+        context.fillText(param+'',x,y+count*addY+10);
+        for (param2 in panzerArr[numP])
+        {
+            if (param==param2)
+            {
+
+                drawBarParam(x+100, y + count* addY, panzerArr[numP][param2], maxParam[param]);
+            }
+        }
+        count++;
+    }
+}
+function drawBarParam(x,y,value,max)
+{
+    let width = 300;
+    context.fillStyle = "red";
+    context.fillRect(x, y, width, 10);
+    context.fillStyle = "green";
+    context.fillRect(x, y, width*value/max, 10);
+
 }
 function cameraMove()
 {
