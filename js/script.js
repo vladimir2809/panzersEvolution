@@ -19,8 +19,8 @@ var quantityColor = 64;
 var quantityBullet = 150;
 var quantityBurst = 500;
 var quantityPanzer = 64;
-var quantityWall = 10//64;
-var quantityBonus = 15;
+var quantityWall = 64;
+var quantityBonus = 150;
 
 var modeGame = 'HERO';// 'GOD', 'HERO', 'EGREGOR'
 var numSelectPanzer = 0;
@@ -74,6 +74,9 @@ var panzer = {
     state: {
         body:null,
         tower:null,
+        HP:null,
+        energy:null,
+        patrons: null,
     }
 }
 var maxParam = {
@@ -505,6 +508,9 @@ var Genes = function () {
     this.state = {
         body: null,
         tower: null,
+        HP:null,
+        energy:null,
+        patrons: null,
     }
     this.memory={
         M1: 0,
@@ -621,7 +627,7 @@ var Genes = function () {
         context.fillRect(x,y,100,580);
         context.fillStyle = 'white';
         context.font = '10px Arial';
-        let addX = 34;
+        let addX = 30;
         for (let i = 0; i < this.commandArr.length;i++)
         {
             context.fillText(this.commandArr[i].name,x+3,y+i*12+12);
@@ -631,15 +637,17 @@ var Genes = function () {
 
             }
         }
-        context.font = '12px Arial';
+        
         let index = 0;
         addX = 45;
         let multY = 18;
         colorText = 'white';
         y += 10;
         x += 85;
+        context.font = '14px Arial';
         context.fillStyle = 'white';
         context.fillText("Sensor",x+addX,y);
+        context.font = '12px Arial';
         for (prop in this.sensor)
         {
             context.fillStyle = "blue";
@@ -652,8 +660,10 @@ var Genes = function () {
         }
         y += multY * 4;
         index = 0;
+        context.font = '14px Arial';
         context.fillStyle = 'white';
         context.fillText("State",x+addX,y);
+        context.font = '12px Arial';
         for (prop in this.state)
         {
             context.fillStyle = "blue";
@@ -665,7 +675,7 @@ var Genes = function () {
             index++;
         }
         index = 0;
-        y += multY * 3;
+        y += multY * 6;
         for (prop in this.memory)
         {
             context.fillStyle = "blue";
@@ -1258,7 +1268,10 @@ function updateStatePanzer(panzer)
     panzer.towerY1 = panzer.towerY +( Math.sin((Math.PI / 180) * panzer.angleTower) * panzer.towerLength)//*scale;
     panzer.towerX1 = panzer.towerX +( Math.cos((Math.PI / 180) * panzer.angleTower) * panzer.towerLength)//*scale;
     panzer.state.body = panzer.angleBody/90;
-    panzer.state.tower = panzer.angleTower;
+    panzer.state.tower =Math.trunc( panzer.angleTower);
+    panzer.state.HP = Math.trunc(panzer.HP/panzer.maxHP*100);
+    panzer.state.energy= Math.trunc(panzer.energy/panzer.maxEnergy*100);
+    panzer.state.patrons = panzer.countPatrons;
 }
 function killedPanzers()
 {
