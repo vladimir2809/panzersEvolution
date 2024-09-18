@@ -18,8 +18,9 @@ var size = 40;
 var quantityColor = 64;
 var quantityBullet = 150;
 var quantityBurst = 500;
-var quantityPanzer =2// 64;
+var quantityPanzer = 64;
 var quantityWall = 10//64;
+var quantityBonus = 15;
 
 var modeGame = 'HERO';// 'GOD', 'HERO', 'EGREGOR'
 var numSelectPanzer = 0;
@@ -67,8 +68,12 @@ var panzer = {
     selectCommand:0,
     sensor: {
         bonus: null,
-        wall: null,
+      /*  wall: null,*/
         enemy: null,
+    },
+    state: {
+        body:null,
+        tower:null,
     }
 }
 var maxParam = {
@@ -99,8 +104,8 @@ var wall = {
 var map = {
     x:0,
     y:0,
-    width: 800*1,//4,
-    height: 600*1,//4,
+    width: 800*4,
+    height: 600*4,
 }
 var camera = {
     x:0,
@@ -380,7 +385,7 @@ var Burst=function()
     }
 }
 var Bonuses = function () {
-    this.quantityBonus = 150;
+    this.quantityBonus = quantityBonus; //150;
     this.quantityBonusMin = 10;
     this.bonus = {
         being: false,
@@ -494,10 +499,13 @@ var Genes = function () {
     this.quantityCommand = 48;
     this.sensor = {
         bonus: null,
-        wall: null,
+   /*     wall: null,*/
         enemy: null,
     }
-
+    this.state = {
+        body: null,
+        tower: null,
+    }
     this.memory={
         M1: 0,
         M2: 0,
@@ -628,7 +636,10 @@ var Genes = function () {
         addX = 45;
         let multY = 18;
         colorText = 'white';
+        y += 10;
         x += 85;
+        context.fillStyle = 'white';
+        context.fillText("Sensor",x+addX,y);
         for (prop in this.sensor)
         {
             context.fillStyle = "blue";
@@ -639,8 +650,22 @@ var Genes = function () {
             context.fillText(this.sensor[prop],x+/*85+*/addX*2,y+index*multY+multY);
             index++;
         }
+        y += multY * 4;
         index = 0;
-        y = 100;
+        context.fillStyle = 'white';
+        context.fillText("State",x+addX,y);
+        for (prop in this.state)
+        {
+            context.fillStyle = "blue";
+            context.fillRect(x + /*85 +*/ addX * 2-4, y + index * multY + multY/3+1, 30, 15);
+            context.fillStyle = colorText;
+            context.fillText(prop,x+/*85+*/addX,y+index*multY+multY);
+
+            context.fillText(this.state[prop],x+/*85+*/addX*2,y+index*multY+multY);
+            index++;
+        }
+        index = 0;
+        y += multY * 3;
         for (prop in this.memory)
         {
             context.fillStyle = "blue";
@@ -653,7 +678,7 @@ var Genes = function () {
             if (index == 4) y += 20;
         }
     }
-    this.setData=function(data,sensor)
+    this.setData=function(data,sensor,state)
     {
      //   console.log(data);
         this.commandArr = [];
@@ -662,6 +687,7 @@ var Genes = function () {
             this.commandArr.push(data.commandArr[i]);
         }
         this.sensor =JSON.parse(JSON.stringify(sensor))
+        this.state =JSON.parse(JSON.stringify(state))
     }
 
 }
@@ -1178,7 +1204,9 @@ function update()
            // if (checkInObj(panzerArr[i],mouseX/scale+camera.x,mouseY/scale+camera.y))
             {
                 numGenesPanzer = numSelectPanzer;
-                genes.setData(panzerArr[numSelectPanzer].genes,panzerArr[numSelectPanzer].sensor);
+                genes.setData(panzerArr[numSelectPanzer].genes,
+                    panzerArr[numSelectPanzer].sensor,
+                    panzerArr[numSelectPanzer].state);
             }
         }
 
@@ -1229,6 +1257,8 @@ function updateStatePanzer(panzer)
     panzer.towerX = (centerX + Math.cos((Math.PI / 180) * panzer.angleTower) * panzer.sizeTower)//*scale;
     panzer.towerY1 = panzer.towerY +( Math.sin((Math.PI / 180) * panzer.angleTower) * panzer.towerLength)//*scale;
     panzer.towerX1 = panzer.towerX +( Math.cos((Math.PI / 180) * panzer.angleTower) * panzer.towerLength)//*scale;
+    panzer.state.body = panzer.angleBody/90;
+    panzer.state.tower = panzer.angleTower;
 }
 function killedPanzers()
 {
@@ -1319,12 +1349,12 @@ function checkObjVisible(panzer,obj,barrierArr)
         if (panzer.y>obj.y && panzer.y-obj.y<dist)
         {
             if (checkBarrierVisible(panzer,obj,barrierArr,1)==false)
-            return 1;
+            return 3;
         }
         else if (panzer.y<obj.y && obj.y - panzer.y<dist)
         {
             if (checkBarrierVisible(panzer,obj,barrierArr,3)==false)
-            return 3;
+            return 1;
         }
     }
     if (panzer.y<obj.y+obj.height && panzer.y+panzer.height>obj.y)
@@ -1332,12 +1362,12 @@ function checkObjVisible(panzer,obj,barrierArr)
         if (panzer.x>obj.x && panzer.x-obj.x<dist)
         {
             if (checkBarrierVisible(panzer,obj,barrierArr,4)==false)
-            return 4;
+            return 2;
         }
         else if (panzer.x<obj.x && obj.x-panzer.x<dist)
         {
             if (checkBarrierVisible(panzer,obj,barrierArr,2)==false)
-            return 2;
+            return 0;
         }
     }
    
