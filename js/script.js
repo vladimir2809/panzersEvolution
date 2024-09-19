@@ -48,8 +48,8 @@ var panzer = {
     speed:10,
     maxHP: 1000,
     HP: 1000,
-    maxEnergy: 1000,
-    energy: 1000,
+    maxEnergy: 5000,
+    energy: 5000,
     countPatrons:10,
     damage:10,// урон
     accuracy:75,// точность 
@@ -84,7 +84,7 @@ var maxParam = {
     speed:100,
     damage: 300,
     accuracy: 100,
-    speedAttack: 300,
+    speedAttack: 50,
 }
 // обьект линия
 var line={
@@ -817,6 +817,12 @@ function create()
             collisionPanzerToPanzer(panzerOne,null) == true);
         let index = i % quantityColor;
         panzerOne.color = colorArr[index];
+        panzerOne.maxHP = panzerOne.HP = randomInteger(500, 1000);
+        panzerOne.speed = randomInteger(1, 3);
+        panzerOne.damage = randomInteger(10, 20)
+        panzerOne.accuracy = randomInteger(70, 80);
+        panzerOne.speedAttack = randomInteger(30, 60);
+        panzerOne.timeAttack = maxParam.speedAttack - panzerOne.speedAttack;
         gs = new Genes();
         gs.initCommandRand();
         panzerOne.genes = {
@@ -987,7 +993,16 @@ function drawAll()
     context.font='25px Arial';
     context.fillStyle = 'green';
     context.fillText("Sensor: "+sensorValue, 1,690);
-    drawParamPanzer(300,650,numSelectPanzer)
+    let numP = 0;
+    if (modeGame=='HERO')
+    {
+        numP = numSelectPanzer;
+    }
+    else if (modeGame=='GOD')
+    {
+        numP = numGenesPanzer;
+    }
+    drawParamPanzer(300,650,numP)
    
     
 }
@@ -1207,18 +1222,31 @@ function update()
     bullets.collisionWalls(wallArr);
     burst.update();
     bonuses.update();
-  //  if (modeGame=='GOD')
+    if (modeGame=='GOD' )
     {
-      //  for (let i = 0; i < panzerArr.length;i++)
+        if (mouseLeftClick()==true)
+        for (let i = 0; i < panzerArr.length;i++)
         {
-           // if (checkInObj(panzerArr[i],mouseX/scale+camera.x,mouseY/scale+camera.y))
+            if (checkInObj(panzerArr[i],mouseX/scale+camera.x,mouseY/scale+camera.y))
             {
-                numGenesPanzer = numSelectPanzer;
-                genes.setData(panzerArr[numSelectPanzer].genes,
-                    panzerArr[numSelectPanzer].sensor,
-                    panzerArr[numSelectPanzer].state);
+                numGenesPanzer = i;
+               
             }
         }
+        genes.setData(panzerArr[numGenesPanzer].genes,
+                    panzerArr[numGenesPanzer].sensor,
+                    panzerArr[numGenesPanzer].state);
+
+    }
+    if (modeGame=='HERO')
+    {
+        {
+            numGenesPanzer = numSelectPanzer;
+            genes.setData(panzerArr[numSelectPanzer].genes,
+                panzerArr[numSelectPanzer].sensor,
+                panzerArr[numSelectPanzer].state);
+        }
+        
 
     }
     if (keyUpDuration('NumpadSubtract',100)==true)
@@ -1289,7 +1317,12 @@ function updateBarrierVisible()
     let panzerArr2 = [];
     for (let i = 0; i < panzerArr.length;i++)
     {
-        if (panzerArr[i].being==true && i!=numSelectPanzer)
+        if (panzerArr[i].being==true && 
+                (
+                    (i!=numSelectPanzer && modeGame=="HERO") ||        
+                    (i!=numGenesPanzer && modeGame=="GOD")
+                )
+            )
         {
             panzerArr2.push(panzerArr[i]);
         }
@@ -1474,7 +1507,8 @@ function controlHumanPanzer(panzer)
     if (checkMouseLeft() && panzer.countAttack>panzer.timeAttack && panzer.countPatrons>0)
     {
         panzer.countAttack = 0;
-        bullets.shot(panzer.towerX1,panzer.towerY1,panzer.angleTower,100);
+        bullets.shot(panzer.towerX1,panzer.towerY1,
+                panzer.angleTower+mixingShot(panzer.accuracy),100);
         panzer.countPatrons--;
     }  
     panzer.energy -= minusEnergyMove/40;
@@ -1535,7 +1569,8 @@ function completeGenesPanzer(panzer)
         {
             if (panzer.countAttack>=panzer.timeAttack && panzer.countPatrons>0)
             {
-                bullets.shot(panzer.towerX1,panzer.towerY1,panzer.angleTower,30);
+                bullets.shot(panzer.towerX1,panzer.towerY1,
+                            panzer.angleTower+mixingShot(panzer.accuracy),30);
                 panzer.countAttack = 0;
                 panzer.countPatrons--;
             }
