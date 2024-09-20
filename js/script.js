@@ -22,7 +22,7 @@ var quantityPanzer = 64;
 var quantityWall = 64;
 var quantityBonus = 150;
 
-var modeGame = 'HERO';// 'GOD', 'HERO', 'EGREGOR'
+var modeGame = 'GOD';// 'GOD', 'HERO', 'EGREGOR'
 var numSelectPanzer = 0;
 var numGenesPanzer = 0;
 var distAttack = 300;
@@ -500,6 +500,7 @@ var Bonuses = function () {
 
 var Genes = function () {
     this.quantityCommand = 48;
+    this.selectCommand = 0;
     this.sensor = {
         bonus: null,
    /*     wall: null,*/
@@ -553,16 +554,6 @@ var Genes = function () {
             countValue: null,
             
         },
-    /*    {
-            name: 'rot',
-            valueArr:[
-                {
-                    type:'numMin0Max1',
-                },
-            ],
-            countValue: null,
-            
-        },
         {
             name: 'goto',
             valueArr:[
@@ -571,7 +562,7 @@ var Genes = function () {
                 },
             ],
             countValue: null,  
-        },*/
+        },
     ];
     for (let i = 0; i < this.commandDescr.length;i++)
     {
@@ -630,6 +621,13 @@ var Genes = function () {
         let addX = 30;
         for (let i = 0; i < this.commandArr.length;i++)
         {
+
+            if (i==this.selectCommand)
+            {
+                context.fillStyle = '#964b00 ';
+                context.fillRect(x,y+i*12+4,100,12);
+            }
+            context.fillStyle = 'white';
             context.fillText(this.commandArr[i].name,x+3,y+i*12+12);
             for (let j = 0; j < this.commandArr[i].values.length;j++)
             {
@@ -698,6 +696,10 @@ var Genes = function () {
         }
         this.sensor =JSON.parse(JSON.stringify(sensor))
         this.state =JSON.parse(JSON.stringify(state))
+    }
+    this.setSelectCommand=function(value)
+    {
+        this.selectCommand = value;
     }
 
 }
@@ -1195,6 +1197,7 @@ function update()
             else
             {
                 completeGenesPanzer(panzerArr[i]);
+                
             }
 
             let barrierArr=updateBarrierVisible();
@@ -1236,6 +1239,7 @@ function update()
         genes.setData(panzerArr[numGenesPanzer].genes,
                     panzerArr[numGenesPanzer].sensor,
                     panzerArr[numGenesPanzer].state);
+        genes.setSelectCommand(panzerArr[numGenesPanzer].selectCommand);
 
     }
     if (modeGame=='HERO')
@@ -1519,7 +1523,7 @@ function completeGenesPanzer(panzer)
     //console.log(panzer.selectCommand);
     if (panzer.genes.commandArr[select].name=='move')
     {
-        value = panzer.genes.commandArr[select].values[0];
+        let value = panzer.genes.commandArr[select].values[0];
         let minusEnergy = minusEnergyMove / 10;
         if (value==1 && panzer.dir!=0)
         {
@@ -1575,8 +1579,14 @@ function completeGenesPanzer(panzer)
                 panzer.countPatrons--;
             }
         }
+        select++;// переход на следуюшию команду
     }
-    select++;//     quantityCommand
+    else if (panzer.genes.commandArr[select].name=='goto')
+    {
+        let value = panzer.genes.commandArr[select].values[0];
+        select += value;
+    }
+    
     select %= new Genes().quantityCommand;
     panzer.selectCommand = select;
     panzer.energy -= minusEnergyMove / 40;;
