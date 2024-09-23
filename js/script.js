@@ -22,7 +22,7 @@ var quantityPanzer = 64;
 var quantityWall = 64;
 var quantityBonus = 150;
 
-var modeGame = 'GOD';// 'GOD', 'HERO', 'EGREGOR'
+var modeGame = 'HERO';// 'GOD', 'HERO', 'EGREGOR'
 var numSelectPanzer = 0;
 var numGenesPanzer = 0;
 var distAttack = 300;
@@ -77,6 +77,7 @@ var panzer = {
         HP:null,
         energy:null,
         patrons: null,
+        collis: 0,
     }
 }
 var maxParam = {
@@ -512,6 +513,7 @@ var Genes = function () {
         HP:null,
         energy:null,
         patrons: null,
+        collis:0,
     }
     this.memory={
         M1: 0,
@@ -673,7 +675,7 @@ var Genes = function () {
             index++;
         }
         index = 0;
-        y += multY * 6;
+        y += multY * 7;
         for (prop in this.memory)
         {
             context.fillStyle = "blue";
@@ -1202,11 +1204,20 @@ function update()
 
             let barrierArr=updateBarrierVisible();
             updateSensorPanzer(panzerArr[i],i,barrierArr)
+            let collision = [false, false, false];
+            panzerArr[i].state.collis = 0;
+            collision[0] = collisionPanzerWall(panzerArr[i]);
+            collision[1] = collisionRectangleMap(panzerArr[i]);
+            collision[2] = collisionPanzerToPanzer(panzerArr[i],i)
+            for (let j = 0; j < collision.length; j++)
+            {
+                if (collision[j] == true)
+                {
+                    panzerArr[i].state.collis = 1;
+                    break;
+                }
+            }
 
-            collisionPanzerWall(panzerArr[i]);
-            collisionRectangleMap(panzerArr[i]);
-            collisionPanzerToPanzer(panzerArr[i],i)
-        
             updateStatePanzer(panzerArr[i]);
             if (modeGame=='HERO')
             {
