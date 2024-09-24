@@ -15,9 +15,10 @@ var flagScaling = false;
 /*var  widthSide = screenWidth - camera.width;
 var  heightSide = screenHeight - camera.height;*/
 var size = 40;
-var quantityColor = 64;
+var quantityColor = 4;//64
 var quantityBullet = 150;
 var quantityBurst = 500;
+var quantityTeam = 4;
 var quantityPanzer = 64;
 var quantityWall = 64;
 var quantityBonus = 150;
@@ -33,6 +34,8 @@ var countLoadImage=0;// количество загруженных картин
 var countLoopIter = 0;
 var sensorValue = 0;
 var helperArr = [];
+var progresslevel = [];
+var maxLevel = 25;
 
 var panzer = {
     being: true,
@@ -63,7 +66,9 @@ var panzer = {
     centerX:null,
     centerY: null,
     towerLength: 10,
-
+    level: 1,
+    XP: 0,
+    team: null,
     genes: null,
     selectCommand:0,
     sensor: {
@@ -175,6 +180,7 @@ var Bullets = function () {
         angle:null,
         dist: 0,
         DMG:null,
+        master: null,
     }
     this.speed = 20; 
     this.bulletArr = [];
@@ -207,7 +213,7 @@ var Bullets = function () {
         }
         //context.fillText(countTrue+'',20,50);
     }
-    this.shot=function(x,y,angle,DMG)
+    this.shot=function(x,y,angle,DMG,master)
     {
         for (let i = 0; i < quantityBullet;i++)
         if (this.bulletArr[i].being==false)
@@ -218,6 +224,7 @@ var Bullets = function () {
             bullet.y = y;
             bullet.angle = angle;
             bullet.DMG = DMG;
+            bullet.master = master;
             bullet.dist = 0;
             this.bulletArr[i] = bullet;
             break;
@@ -241,7 +248,7 @@ var Bullets = function () {
                     dx = /*this.speed*/speed2 * Math.cos(pi * (this.bulletArr[i].angle ) / 180) ;
                     this.bulletArr[i].x += dx;
                     this.bulletArr[i].y += dy;
-                    this.collisionWalls(wallArr,i);
+                    this.collisionBullet(wallArr,i);
                     this.bulletArr[i].dist += Math.sqrt(dx * dx + dy * dy);
                     if (this.bulletArr[i].dist > distAttack) this.kill(i);
                 }
@@ -274,7 +281,7 @@ var Bullets = function () {
         }
         return null;
     }
-    this.collisionWalls=function(walls,num=null)
+    this.collisionBullet=function(walls,num=null)
     {
         if (num==null)
         {    
@@ -289,6 +296,8 @@ var Bullets = function () {
                 if (index!=null)
                 if (panzerArr[index].being==true)
                 {
+                    
+
                     panzerArr[index].HP -= this.bulletArr[num].DMG;
                     burst.start(this.bulletArr[i].x,this.bulletArr[i].y);;
                     this.kill(i);
@@ -306,6 +315,35 @@ var Bullets = function () {
             if (index!=null)
             if (panzerArr[index].being==true)
             {
+                valueXP = 100;
+                if (panzerArr[index].team!=panzerArr[this.bulletArr[num].master].team)
+                {
+                    panzerArr[this.bulletArr[num].master].XP += valueXP*3;
+                    if (panzerArr[this.bulletArr[num].master].XP >=
+                        progresslevel[panzerArr[this.bulletArr[num].master].level])
+                    {
+                        panzerArr[this.bulletArr[num].master].level++;
+                    }
+
+                }
+                else
+                {
+                    if (panzerArr[this.bulletArr[num].master].XP >= valueXP*11)
+                    {
+                        panzerArr[this.bulletArr[num].master].XP -= valueXP*11;
+
+                    }
+                    else
+                    {
+                        panzerArr[this.bulletArr[num].master].XP = 0;
+                    }
+                    if (panzerArr[this.bulletArr[num].master].XP <=
+                        progresslevel[panzerArr[this.bulletArr[num].master].level-1])
+                    {
+                        panzerArr[this.bulletArr[num].master].level--;
+                    }
+
+                }
                 panzerArr[index].HP -= this.bulletArr[num].DMG;
                 burst.start(this.bulletArr[num].x,this.bulletArr[num].y);;
                 this.kill(num);
@@ -792,6 +830,15 @@ function create()
         colorArr.push(color);
     }
     console.log(colorArr);
+    // инициализируем progressLevel
+    for (let i = 1; i < maxLevel;i++)
+    {
+        let x = 500;
+        let y = 2;
+        let levelXP=x * ( Math.pow(i,y)) - (x * i)
+        progresslevel.push(levelXP);
+    }
+    console.log('progressLevel',progresslevel);
     // инициализируем стены
     for (let i = 0; i < quantityWall;i++)
     {
@@ -821,6 +868,7 @@ function create()
             collisionPanzerToPanzer(panzerOne,null) == true);
         let index = i % quantityColor;
         panzerOne.color = colorArr[index];
+        panzerOne.team = i % quantityTeam;
         panzerOne.maxHP = panzerOne.HP = randomInteger(500, 1000);
         panzerOne.speed = randomInteger(1, 3);
         panzerOne.damage = randomInteger(10, 20)
@@ -997,6 +1045,13 @@ function drawAll()
     context.font='25px Arial';
     context.fillStyle = 'green';
     context.fillText("Sensor: "+sensorValue, 1,690);
+
+
+   
+    context.font='25px Arial';
+    context.fillStyle = 'green';
+    context.fillText("Sensor: "+sensorValue, 1,690);
+    /*рисуем уровень и параметры танка*/
     let numP = 0;
     if (modeGame=='HERO')
     {
@@ -1006,6 +1061,11 @@ function drawAll()
     {
         numP = numGenesPanzer;
     }
+    levelNextXP = progresslevel[panzerArr[numP].level];
+    context.font='25px Arial';
+    context.fillStyle = 'white';
+    context.fillText("Level: "+panzerArr[numP].level+" "
+                +"Evolutionary meat: "+panzerArr[numP].XP+" from: "+levelNextXP, 300,630);
     drawParamPanzer(300,650,numP)
    
     
@@ -1194,11 +1254,11 @@ function update()
 
             if (numSelectPanzer==i && modeGame=='HERO')
             {
-                controlHumanPanzer(panzerArr[i]);
+                controlHumanPanzer(panzerArr[i],i);
             }
             else
             {
-                completeGenesPanzer(panzerArr[i]);
+                completeGenesPanzer(panzerArr[i],i);
                 
             }
 
@@ -1233,7 +1293,7 @@ function update()
 
     killedPanzers();
     bullets.update();
-    bullets.collisionWalls(wallArr);
+    bullets.collisionBullet(wallArr);
     burst.update();
     bonuses.update();
     if (modeGame=='GOD' )
@@ -1455,7 +1515,7 @@ function checkBarrierVisible(objStart,objFinish,arrBarrier,side)
     }
     return false;
 }
-function controlHumanPanzer(panzer)
+function controlHumanPanzer(panzer,numP)
 {
     let minusEnergy = minusEnergyMove / 10;;
     if (checkPressKey('KeyW') == true && panzer.dir!=0 )
@@ -1523,12 +1583,12 @@ function controlHumanPanzer(panzer)
     {
         panzer.countAttack = 0;
         bullets.shot(panzer.towerX1,panzer.towerY1,
-                panzer.angleTower+mixingShot(panzer.accuracy),100);
+                panzer.angleTower+mixingShot(panzer.accuracy),100,numP);
         panzer.countPatrons--;
     }  
     panzer.energy -= minusEnergyMove/40;
 }
-function completeGenesPanzer(panzer)
+function completeGenesPanzer(panzer,numP)
 {
     let select = panzer.selectCommand;
     //console.log(panzer.selectCommand);
@@ -1585,7 +1645,7 @@ function completeGenesPanzer(panzer)
             if (panzer.countAttack>=panzer.timeAttack && panzer.countPatrons>0)
             {
                 bullets.shot(panzer.towerX1,panzer.towerY1,
-                            panzer.angleTower+mixingShot(panzer.accuracy),30);
+                            panzer.angleTower+mixingShot(panzer.accuracy),30,numP);
                 panzer.countAttack = 0;
                 panzer.countPatrons--;
             }
