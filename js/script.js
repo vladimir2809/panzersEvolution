@@ -36,7 +36,7 @@ var sensorValue = 0;
 var helperArr = [];
 var progresslevel = [];
 var maxLevel = 25;
-
+var testFlagDirParam = true;
 var panzer = {
     being: true,
     x:1,
@@ -87,10 +87,10 @@ var panzer = {
 }
 var maxParam = {
     maxHP:2000,
-    speed:100,
-    damage: 300,
+    speed:30,
+    damage: 100,
     accuracy: 100,
-    speedAttack: 50,
+    speedAttack: 100,
 }
 // обьект линия
 var line={
@@ -323,6 +323,7 @@ var Bullets = function () {
                         progresslevel[panzerArr[this.bulletArr[num].master].level])
                     {
                         panzerArr[this.bulletArr[num].master].level++;
+                        addParamPanzer(panzerArr[this.bulletArr[num].master], true);
                     }
 
                 }
@@ -341,6 +342,7 @@ var Bullets = function () {
                         progresslevel[panzerArr[this.bulletArr[num].master].level-1])
                     {
                         panzerArr[this.bulletArr[num].master].level--;
+                        addParamPanzer(panzerArr[this.bulletArr[num].master], false);
                     }
 
                 }
@@ -791,7 +793,8 @@ function create()
 {
     canvas = document.getElementById("canvas");
     context = canvas.getContext("2d");
-    initKeyboardAndMouse(['KeyA', 'KeyW', 'KeyS', 'KeyD',"NumpadSubtract",'NumpadAdd','Minus','Equal']);
+    initKeyboardAndMouse(['KeyA', 'KeyW', 'KeyS', 'KeyD',"NumpadSubtract",'NumpadAdd','Minus','Equal',
+                            'Digit1','Digit2','Digit3','Digit4','Digit5','KeyQ',]);
     srand(2);
     updateSize();
 /*    canvas.setAttribute('width',canvasWidth);
@@ -869,11 +872,11 @@ function create()
         let index = i % quantityColor;
         panzerOne.color = colorArr[index];
         panzerOne.team = i % quantityTeam;
-        panzerOne.maxHP = panzerOne.HP = randomInteger(500, 1000);
-        panzerOne.speed = randomInteger(1, 3);
-        panzerOne.damage = randomInteger(10, 20)
-        panzerOne.accuracy = randomInteger(70, 80);
-        panzerOne.speedAttack = randomInteger(30, 60);
+        panzerOne.maxHP = panzerOne.HP = randomInteger(10, 20) * maxParam.maxHP/100;
+        panzerOne.speed =randomInteger(10, 20) * maxParam.speed/100;
+        panzerOne.damage = randomInteger(10, 20) * maxParam.damage/100
+        panzerOne.accuracy = randomInteger(60, 80) * maxParam.accuracy/100;
+        panzerOne.speedAttack = randomInteger(10, 20) * maxParam.speedAttack/100;
         panzerOne.timeAttack = maxParam.speedAttack - panzerOne.speedAttack;
         gs = new Genes();
         gs.initCommandRand();
@@ -1242,11 +1245,56 @@ function cameraFocusXY(x,y,map)// следить камерой за опред�
         ///   console.log(camera.width/2/scale+"   "+screenWidth);
     }
 }
+function addParamPanzer(panzer,plus=true,numParam=null)
+{
+    let R = randomInteger(0, 4);
+    if (numParam != null) R = numParam;
+    if (R==0)
+    {
+        plus == true ? panzer.maxHP *= 1.1 : panzer.maxHP /= 1.1;
+        if (panzer.maxHP > maxParam.maxHP) panzer.maxHP = maxParam.maxHP;
+        panzer.HP = panzer.maxHP;
+    }
+    if (R==1)
+    {
+        plus == true ? panzer.speed *= 1.1 : panzer.speed /= 1.1;
+        if (panzer.speed > maxParam.speed) panzer.speed = maxParam.speed;
+    }
+    if (R==2)
+    {
+        plus == true ? panzer.damage *= 1.1 : panzer.damage /= 1.1;
+        if (panzer.damage > maxParam.damage) panzer.damage = maxParam.damage;
+    }
+    if (R==3)
+    {
+        plus == true ? panzer.accuracy *= 1.05 : panzer.accuracy /= 1.05;
+        if (panzer.accuracy > maxParam.accuracy) panzer.accuracy = maxParam.accuracy;
+    }
+    if (R==4)
+    {
+        plus == true ? panzer.speedAttack *= 1.1 : panzer.speedAttack /= 1.1;
+        if (panzer.speedAttack > maxParam.speedAttack) panzer.speedAttack = maxParam.speedAttack;
+        panzer.timeAttack = maxParam.speedAttack - panzer.speedAttack;
+    }
+
+}
 function update() 
 {
   
     let countBeingPanzer = 0;
     if (modeGame == 'GOD') cameraMove();
+    if (keyUpDuration('KeyQ',1000)==true)
+    {
+        testFlagDirParam = !testFlagDirParam;
+        alert('flag='+testFlagDirParam);
+    }
+    for (let i = 1; i <= 5;i++)
+    {
+        if (keyUpDuration('Digit'+i,1000)==true)
+        {
+            addParamPanzer(panzerArr[numSelectPanzer], testFlagDirParam, i - 1);
+        }
+    }
     for (let i = 0; i < panzerArr.length;i++)
     {
         if (panzerArr[i].being==true)
