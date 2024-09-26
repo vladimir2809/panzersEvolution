@@ -1247,35 +1247,89 @@ function cameraFocusXY(x,y,map)// следить камерой за опред�
 }
 function addParamPanzer(panzer,plus=true,numParam=null)
 {
-    let R = randomInteger(0, 4);
-    if (numParam != null) R = numParam;
-    if (R==0)
+    function cmpParam(flagArr,param1,param2,num)
     {
-        plus == true ? panzer.maxHP *= 1.1 : panzer.maxHP /= 1.1;
-        if (panzer.maxHP > maxParam.maxHP) panzer.maxHP = maxParam.maxHP;
-        panzer.HP = panzer.maxHP;
+        if (param1==param2)
+        {
+            flagArr[num] = true;
+            return true;
+        }
+        return false;
     }
-    if (R==1)
-    {
-        plus == true ? panzer.speed *= 1.1 : panzer.speed /= 1.1;
-        if (panzer.speed > maxParam.speed) panzer.speed = maxParam.speed;
-    }
-    if (R==2)
-    {
-        plus == true ? panzer.damage *= 1.1 : panzer.damage /= 1.1;
-        if (panzer.damage > maxParam.damage) panzer.damage = maxParam.damage;
-    }
-    if (R==3)
-    {
-        plus == true ? panzer.accuracy *= 1.05 : panzer.accuracy /= 1.05;
-        if (panzer.accuracy > maxParam.accuracy) panzer.accuracy = maxParam.accuracy;
-    }
-    if (R==4)
-    {
-        plus == true ? panzer.speedAttack *= 1.1 : panzer.speedAttack /= 1.1;
-        if (panzer.speedAttack > maxParam.speedAttack) panzer.speedAttack = maxParam.speedAttack;
-        panzer.timeAttack = maxParam.speedAttack - panzer.speedAttack;
-    }
+
+    let flagArr = [false,false,false,false,false];
+    let flag = false;
+    let flag2 = false;
+    do {
+
+        flag = false;
+        flag2 = false;
+        let R = randomInteger(0, 4);
+        if (numParam != null) R = numParam;
+        let count = 0;
+        for (let i = 0; i <= 4;i++)
+        {
+            if (flagArr[i]==true)
+            {
+                count++;
+            }
+        }
+        if (count >= 5) flag = true;
+        if (flag == true) break;
+        if (R == 0)
+        {
+            if (cmpParam(flagArr, panzer.maxHP, maxParam.maxHP, R) == true) 
+            {
+                flag2 = true;
+                continue;
+            }
+            plus == true ? panzer.maxHP *= 1.1 : panzer.maxHP /= 1.1;
+            if (panzer.maxHP > maxParam.maxHP) panzer.maxHP = maxParam.maxHP;
+            panzer.HP = panzer.maxHP;
+        }
+        if (R == 1) 
+        {
+            if (cmpParam(flagArr, panzer.speed, maxParam.speed, R) == true) 
+            {
+                flag2 = true;
+                continue;
+            }
+            plus == true ? panzer.speed *= 1.1 : panzer.speed /= 1.1;
+            if (panzer.speed > maxParam.speed) panzer.speed = maxParam.speed;
+        }
+        if (R == 2) 
+        {
+            if (cmpParam(flagArr, panzer.damage, maxParam.damage, R) == true) 
+            {
+                flag2 = true;
+                continue;
+            }
+            plus == true ? panzer.damage *= 1.1 : panzer.damage /= 1.1;
+            if (panzer.damage > maxParam.damage) panzer.damage = maxParam.damage;
+        }
+        if (R == 3) 
+        {
+            if (cmpParam(flagArr, panzer.accuracy, maxParam.accuracy, R) == true) 
+            {
+                flag2 = true;
+                continue;
+            }
+            plus == true ? panzer.accuracy *= 1.05 : panzer.accuracy /= 1.05;
+            if (panzer.accuracy > maxParam.accuracy) panzer.accuracy = maxParam.accuracy;
+        }
+        if (R == 4) 
+        {
+            if (cmpParam(flagArr, panzer.speedAttack, maxParam.speedAttack, R) == true) 
+            {
+                flag2 = true;
+                continue;
+            }
+            plus == true ? panzer.speedAttack *= 1.1 : panzer.speedAttack /= 1.1;
+            if (panzer.speedAttack > maxParam.speedAttack) panzer.speedAttack = maxParam.speedAttack;
+            panzer.timeAttack = maxParam.speedAttack - panzer.speedAttack;
+        }
+   
+    } while (flag2==true)
 
 }
 function update() 
@@ -1283,10 +1337,12 @@ function update()
   
     let countBeingPanzer = 0;
     if (modeGame == 'GOD') cameraMove();
-    if (keyUpDuration('KeyQ',1000)==true)
+    if (checkPressKey('KeyQ')==true || keyUpDuration('KeyQ',100)==true)
     {
-        testFlagDirParam = !testFlagDirParam;
-        alert('flag='+testFlagDirParam);
+/*        testFlagDirParam = !testFlagDirParam;
+        alert('flag='+testFlagDirParam);*/
+        panzerArr[numSelectPanzer].level++;
+        addParamPanzer(panzerArr[numSelectPanzer], testFlagDirParam);
     }
     for (let i = 1; i <= 5;i++)
     {
