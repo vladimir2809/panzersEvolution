@@ -35,7 +35,7 @@ var countLoopIter = 0;
 var sensorValue = 0;
 var helperArr = [];
 var progresslevel = [];
-var maxLevel = 25;
+var maxLevel = 2;
 var testFlagDirParam = true;
 var panzer = {
     being: true,
@@ -82,6 +82,7 @@ var panzer = {
         HP:null,
         energy:null,
         patrons: null,
+        attack: 0,
         collis: 0,
     }
 }
@@ -320,7 +321,9 @@ var Bullets = function () {
                 {
                     panzerArr[this.bulletArr[num].master].XP += valueXP*3;
                     if (panzerArr[this.bulletArr[num].master].XP >=
-                        progresslevel[panzerArr[this.bulletArr[num].master].level])
+                        progresslevel[panzerArr[this.bulletArr[num].master].level] 
+                        && (panzerArr[this.bulletArr[num].master].level<maxLevel)
+                        )
                     {
                         panzerArr[this.bulletArr[num].master].level++;
                         addParamPanzer(panzerArr[this.bulletArr[num].master], true);
@@ -341,8 +344,11 @@ var Bullets = function () {
                     if (panzerArr[this.bulletArr[num].master].XP <=
                         progresslevel[panzerArr[this.bulletArr[num].master].level-1])
                     {
-                        panzerArr[this.bulletArr[num].master].level--;
-                        addParamPanzer(panzerArr[this.bulletArr[num].master], false);
+                        if (panzerArr[this.bulletArr[num].master].level>1)
+                        {
+                            panzerArr[this.bulletArr[num].master].level--;
+                            addParamPanzer(panzerArr[this.bulletArr[num].master], false);
+                        }
                     }
 
                 }
@@ -553,6 +559,7 @@ var Genes = function () {
         HP:null,
         energy:null,
         patrons: null,
+        attack: 0,
         collis:0,
     }
     this.memory={
@@ -715,7 +722,7 @@ var Genes = function () {
             index++;
         }
         index = 0;
-        y += multY * 7;
+        y += multY * 8;
         for (prop in this.memory)
         {
             context.fillStyle = "blue";
@@ -834,7 +841,7 @@ function create()
     }
     console.log(colorArr);
     // инициализируем progressLevel
-    for (let i = 1; i < maxLevel;i++)
+    for (let i = 1; i <= maxLevel;i++)
     {
         let x = 500;
         let y = 2;
@@ -1014,7 +1021,8 @@ function drawAll()
    // context.restore();
     for (let i = 0; i < panzerArr.length;i++)
     {
-        if (visibleEnemy(numSelectPanzer,i)!=true)
+        if (visibleEnemy(numSelectPanzer,i)==true &&
+            panzerArr[numSelectPanzer].team!=panzerArr[i].team)
         {
             context.beginPath();
             context.strokeStyle = "green";
@@ -1329,7 +1337,7 @@ function addParamPanzer(panzer,plus=true,numParam=null)
             panzer.timeAttack = maxParam.speedAttack - panzer.speedAttack;
         }
    
-    } while (flag2==true)
+    } while (flag2==true && numParam==null)
 
 }
 function update() 
@@ -1337,10 +1345,10 @@ function update()
   
     let countBeingPanzer = 0;
     if (modeGame == 'GOD') cameraMove();
-    if (checkPressKey('KeyQ')==true || keyUpDuration('KeyQ',100)==true)
+/*    if (checkPressKey('KeyQ')==true || keyUpDuration('KeyQ',100)==true)
     {
-/*        testFlagDirParam = !testFlagDirParam;
-        alert('flag='+testFlagDirParam);*/
+*//*        testFlagDirParam = !testFlagDirParam;
+        alert('flag='+testFlagDirParam);*//*
         panzerArr[numSelectPanzer].level++;
         addParamPanzer(panzerArr[numSelectPanzer], testFlagDirParam);
     }
@@ -1348,9 +1356,11 @@ function update()
     {
         if (keyUpDuration('Digit'+i,1000)==true)
         {
+
+            panzerArr[numSelectPanzer].level++;
             addParamPanzer(panzerArr[numSelectPanzer], testFlagDirParam, i - 1);
         }
-    }
+    }*/
     for (let i = 0; i < panzerArr.length;i++)
     {
         if (panzerArr[i].being==true)
@@ -1491,7 +1501,7 @@ function killedPanzers()
     }
 }
 
-function updateBarrierVisible()
+function updateBarrierVisible()// обновить список барьеров
 {
     let panzerArr2 = [];
     for (let i = 0; i < panzerArr.length;i++)
@@ -1510,7 +1520,7 @@ function updateBarrierVisible()
     barrierArr = barrierArr.concat(panzerArr2);
     return barrierArr;
 }
-function updateSensorPanzer(panzer,numP,barrierArr)
+function updateSensorPanzer(panzer,numP,barrierArr) // обновить сенсоры танка
 {
  
     for (let i = 0; i < bonuses.bonusArr.length;i++)
@@ -1527,7 +1537,8 @@ function updateSensorPanzer(panzer,numP,barrierArr)
     flagVis = false;
     for (let i = 0; i < panzerArr.length;i++)
     {
-        if (visibleEnemy(numP,i)==false)
+        if (visibleEnemy(numP,i)==true &&
+            panzerArr[numP].team!=panzerArr[i].team)
         {
             dist = calcDist(panzerArr[numP].centerX, panzerArr[numP].centerY,
                 panzerArr[i].centerX, panzerArr[i].centerY);
@@ -1547,7 +1558,7 @@ function updateSensorPanzer(panzer,numP,barrierArr)
     
     
 }
-function visibleEnemy(numP1,numP2)
+function visibleEnemy(numP1,numP2) // видит ли танк врага
 {
     /*for (let i = 0; i < panzerArr.length;i++)
     {*/
@@ -1560,13 +1571,13 @@ function visibleEnemy(numP1,numP2)
         crossingTwoPoint(panzerArr[numP1].centerX,panzerArr[numP1].centerY,
             panzerArr[numP2].centerX,panzerArr[numP2].centerY,wallArr)==false)
     {
-        return false;
+        return true;
     }
     //}
-    return true;
+    return false;
 
 }
-function checkObjVisible(panzer,obj,barrierArr)
+function checkObjVisible(panzer,obj,barrierArr)// может ли танк подьехать к обьекту по прямой
 {
     let dist = 350;
     if (panzer.x<obj.x+obj.width && panzer.x+panzer.width>obj.x)
@@ -1598,6 +1609,7 @@ function checkObjVisible(panzer,obj,barrierArr)
    
     return null;
 }
+// проверка не будет ли столкновения если ехать по прямой Side.
 function checkBarrierVisible(objStart,objFinish,arrBarrier,side)
 {
     let addXY ={x:0,y:0};
@@ -1619,7 +1631,7 @@ function checkBarrierVisible(objStart,objFinish,arrBarrier,side)
     }
     return false;
 }
-function controlHumanPanzer(panzer,numP)
+function controlHumanPanzer(panzer,numP)// управление танком героя
 {
     let minusEnergy = minusEnergyMove / 10;;
     if (checkPressKey('KeyW') == true && panzer.dir!=0 )
@@ -1683,6 +1695,14 @@ function controlHumanPanzer(panzer,numP)
     {
         panzer.countAttack++;
     }
+    if (panzer.countAttack > panzer.timeAttack) 
+    {
+        panzer.state.attack = 1;
+    }
+    else
+    {
+        panzer.state.attack = 0;
+    }
     if (checkMouseLeft() && panzer.countAttack>panzer.timeAttack && panzer.countPatrons>0)
     {
         panzer.countAttack = 0;
@@ -1692,7 +1712,7 @@ function controlHumanPanzer(panzer,numP)
     }  
     panzer.energy -= minusEnergyMove/40;
 }
-function completeGenesPanzer(panzer,numP)
+function completeGenesPanzer(panzer,numP)// исполнение генов танка
 {
     let select = panzer.selectCommand;
     //console.log(panzer.selectCommand);
@@ -1767,7 +1787,7 @@ function completeGenesPanzer(panzer,numP)
     panzer.energy -= minusEnergyMove / 40;;
 }
 
-function collisionPanzerWall(panzer)
+function collisionPanzerWall(panzer) // проверка столкновения танка со стеной
 {
     for (let i = 0; i < wallArr.length;i++)
     {
@@ -1807,7 +1827,7 @@ function collisionPanzerWall(panzer)
     }
     return false;   
 }
-function collisionRectangleMap(panzer)
+function collisionRectangleMap(panzer) // проверка столкновения с краям карты
 {
     if (panzer.x<map.x)
     {
@@ -1832,7 +1852,7 @@ function collisionRectangleMap(panzer)
     }
     return false;
 }
-function collisionPanzerToPanzer(panzer,num)
+function collisionPanzerToPanzer(panzer,num)// проверка столкновения танка с танком
 {
     for (let i = 0; i < panzerArr.length;i++)
     {
