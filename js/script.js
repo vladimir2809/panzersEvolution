@@ -567,6 +567,10 @@ var Genes = function () {
         M2: 0,
         M3: 0,
         M4: 0,
+        M5: 0,
+        M6: 0,
+        M7: 0,
+        M8: 0,
 
         MC1: 0,
         MC2: 0,
@@ -590,14 +594,39 @@ var Genes = function () {
             valueMin: 0,
             valueMax: this.quantityCommand,
         },
+        {
+            name: 'memory',
+            values:['M1','M2','M3','M4','M5','M6','M7','M8','MC1','MC2','MC3','MC4',],
+            valueMin: null,
+            valueMax: null,
+        },
+        {
+            name: 'sensor',
+            values:['bonus','enemy',],
+            valueMin: null,
+            valueMax: null,
+        },
+        {
+            name: 'state',
+            values:['body','tower','HP','energy','patrons','attack','collis',],
+            valueMin: null,
+            valueMax: null,
+        },
+        {
+            name: 'integer',
+            //values:['bonus','enemy',],
+            valueMin: -1000,
+            valueMax:  1000,
+        },
+
 
     ],
     this.commandDescr = [
         {
-            name: 'move',
+            name: 'exec',
             valueArr:[
                 {
-                    type:'numMin0Max7',
+                    type:['numMin0Max7',]
                 },
             ],
             countValue: null,
@@ -607,10 +636,25 @@ var Genes = function () {
             name: 'goto',
             valueArr:[
                 {
-                    type:'numQuanCommand',
+                    type:['numQuanCommand',]
                 },
             ],
             countValue: null,  
+        },
+        {
+            name: 'mov',
+            valueArr:[
+                {
+                    type:['memory',]
+                },
+                {
+                    type:['memory','sensor','state','integer',]
+                    //type:['sensor','state']
+
+
+                },
+            ],
+            countValue: 3,  
         },
     ];
     for (let i = 0; i < this.commandDescr.length;i++)
@@ -628,22 +672,51 @@ var Genes = function () {
         for (let i = 0; i < this.quantityCommand;i++)
         {
             let R1 = randomInteger(0,this.commandDescr.length-1);
+            
             let randArr = [];
             for (let j = 0; j < this.commandDescr[R1].countValue;j++)
             {
                 let min = null;
                 let max = null;
+                let valueStr = null;
+                let flagBreak = false;
                 for (let k = 0; k < this.typeDataValue.length;k++)
                 {
-                    if (this.typeDataValue[k].name==this.commandDescr[R1].valueArr[j].type)
-                    {
+                    let R2=randomInteger(0,this.commandDescr[R1].valueArr[j].type.length)
+                    for (let k1 = 0; k1 < this.commandDescr[R1].valueArr[j].type.length;k1++)
+                    if (this.typeDataValue[k].name==this.commandDescr[R1].valueArr[j].type[k1])
+                    {   
+                        //let R2 = randomInteger(0,this.commandDescr[R1].valueArr[j].type.length);
+
                         //alert(123);
                         min = this.typeDataValue[k].valueMin;
                         max = this.typeDataValue[k].valueMax;
+                        if (this.typeDataValue[k].values!=undefined)
+                        {
+                            let R3 = randomInteger(0,this.typeDataValue[k].values.length-1);
+                            valueStr = this.typeDataValue[k].values[R3];
+                            if (k1==R2)
+                            {
+                                flagBreak = true;
+                                break;
+                            }
+
+                        }
+                       
+               
                     }
+                    if (flagBreak == true) break;
                 }
                 //alert(min+' '+ max);
-                randArr.push(randomInteger(min,max));
+                if (min==null && max==null)
+                {
+                    randArr.push(valueStr);
+
+                }
+                else
+                {
+                    randArr.push(randomInteger(min,max));
+                }
                
             }
             //alert(randArr[0]);
@@ -732,7 +805,7 @@ var Genes = function () {
 
             context.fillText(this.memory[prop],x+/*85+*/addX*2,y+index*multY+multY);
             index++;
-            if (index == 4) y += 20;
+            if (index == 8) y += 20;
         }
     }
     this.setData=function(data,sensor,state)
@@ -1716,7 +1789,7 @@ function completeGenesPanzer(panzer,numP)// исполнение генов та
 {
     let select = panzer.selectCommand;
     //console.log(panzer.selectCommand);
-    if (panzer.genes.commandArr[select].name=='move')
+    if (panzer.genes.commandArr[select].name=='exec')
     {
         let value = panzer.genes.commandArr[select].values[0];
         let minusEnergy = minusEnergyMove / 10;
@@ -1781,7 +1854,11 @@ function completeGenesPanzer(panzer,numP)// исполнение генов та
         let value = panzer.genes.commandArr[select].values[0];
         select += value;
     }
-    
+    else if (panzer.genes.commandArr[select].name=='mov')
+    {
+        //let value = panzer.genes.commandArr[select].values[0];
+        select ++;
+    }
     select %= new Genes().quantityCommand;
     panzer.selectCommand = select;
     panzer.energy -= minusEnergyMove / 40;;
