@@ -2,9 +2,9 @@
 var context = null;
 /*var canvasWidth = 1024;
 var canvasHeight = 600*/;
-let screenWidth = 1024;//option[numOption].widthScreenBlock*mapSize;// ширина экрана
+let screenWidth = 1124;//option[numOption].widthScreenBlock*mapSize;// ширина экрана
 let screenHeight = 768;// option[numOption].heightScreenBlock*mapSize;// высота экрана
-var windowWidth = 1024;//document.documentElement.clientWidth;
+var windowWidth = 1124;//document.documentElement.clientWidth;
 var windowHeight = 768;//document.documentElement.clientHeight;
 var windowWidthOld = windowWidth;
 var windowHeighOld = windowHeight;
@@ -23,7 +23,7 @@ var quantityPanzer = 64;
 var quantityWall = 64;
 var quantityBonus = 150;
 
-var modeGame = 'HERO';// 'GOD', 'HERO', 'EGREGOR'
+var modeGame = 'GOD';// 'GOD', 'HERO', 'EGREGOR'
 var numSelectPanzer = 0;
 var numGenesPanzer = 0;
 var distAttack = 300;
@@ -84,8 +84,30 @@ var panzer = {
         patrons: null,
         attack: 0,
         collis: 0,
+    },
+    memory:{
+        M1: 0,
+        M2: 0,
+        M3: 0,
+        M4: 0,
+        M5: 0,
+        M6: 0,
+        M7: 0,
+        M8: 0,
+
+/*        MC1: 0,
+        MC2: 0,
+        MC3: 0,
+        MC4: 0,*/
     }
 }
+var teamMemory = {
+    MC1: 0,
+    MC2: 0,
+    MC3: 0,
+    MC4: 0,
+};
+var teamMemoryArr = [];
 var maxParam = {
     maxHP:2000,
     speed:30,
@@ -571,7 +593,8 @@ var Genes = function () {
         M6: 0,
         M7: 0,
         M8: 0,
-
+    },
+    this.teamMemory={
         MC1: 0,
         MC2: 0,
         MC3: 0,
@@ -591,8 +614,8 @@ var Genes = function () {
         },
         {
             name: 'numQuanCommand',
-            valueMin: 0,
-            valueMax: this.quantityCommand,
+            valueMin: 1,
+            valueMax: this.quantityCommand-1,
         },
         {
             name: 'memory',
@@ -656,6 +679,7 @@ var Genes = function () {
             ],
             countValue: 3,  
         },
+
     ];
     for (let i = 0; i < this.commandDescr.length;i++)
     {
@@ -736,8 +760,9 @@ var Genes = function () {
     {
         let x = 820;
         y = 10;
+        let widthCom = 210;
         context.fillStyle = 'blue';
-        context.fillRect(x,y,100,580);
+        context.fillRect(x,y,widthCom,580);
         context.fillStyle = 'white';
         context.font = '10px Arial';
         let addX = 30;
@@ -747,7 +772,7 @@ var Genes = function () {
             if (i==this.selectCommand)
             {
                 context.fillStyle = '#964b00 ';
-                context.fillRect(x,y+i*12+4,100,12);
+                context.fillRect(x,y+i*12+4,widthCom,12);
             }
             context.fillStyle = 'white';
             context.fillText(this.commandArr[i].name,x+3,y+i*12+12);
@@ -759,11 +784,11 @@ var Genes = function () {
         }
         
         let index = 0;
-        addX = 45;
+        addX = 45/*+widthCom*/;
         let multY = 18;
         colorText = 'white';
         y += 10;
-        x += 85;
+        x += 85+widthCom/2;
         context.font = '14px Arial';
         context.fillStyle = 'white';
         context.fillText("Sensor",x+addX,y);
@@ -807,8 +832,19 @@ var Genes = function () {
             index++;
             if (index == 8) y += 20;
         }
+        for (prop in this.teamMemory)
+        {
+            context.fillStyle = "blue";
+            context.fillRect(x + /*85 +*/ addX * 2-4, y + index * multY + multY/3+1, 30, 15);
+            context.fillStyle = colorText;
+            context.fillText(prop,x+/*85+*/addX,y+index*multY+multY);
+
+            context.fillText(this.teamMemory[prop],x+/*85+*/addX*2,y+index*multY+multY);
+            index++;
+            if (index == 8) y += 20;
+        }
     }
-    this.setData=function(data,sensor,state)
+    this.setData=function(data,sensor,state,memory,teamMemory)
     {
      //   console.log(data);
         this.commandArr = [];
@@ -818,6 +854,8 @@ var Genes = function () {
         }
         this.sensor =JSON.parse(JSON.stringify(sensor))
         this.state =JSON.parse(JSON.stringify(state))
+        this.memory =JSON.parse(JSON.stringify(memory))
+        this.teamMemory = JSON.parse(JSON.stringify(teamMemory));
     }
     this.setSelectCommand=function(value)
     {
@@ -980,6 +1018,16 @@ function create()
     helperArr[0] = new Helper(100,100,'green');
     helperArr[1] = new Helper(150,150,'blue');
     helperArr[2] = new Helper(200,200,'red');
+    for (let i = 0; i < quantityTeam;i++)
+    {
+        teamMemoryArr.push(teamMemory);
+    }
+    console.log('teamMemory',teamMemoryArr);
+    for (let i = 0; i < panzerArr.length;i++ )
+    {
+        console.log('memoryPanzer['+i+'] ',panzerArr[i].memory);
+    }
+    //alert(55);
     //console.log(wallArr);
 }
 window.onresize = function()
@@ -1496,7 +1544,10 @@ function update()
         }
         genes.setData(panzerArr[numGenesPanzer].genes,
                     panzerArr[numGenesPanzer].sensor,
-                    panzerArr[numGenesPanzer].state);
+                    panzerArr[numGenesPanzer].state,
+                    panzerArr[numGenesPanzer].memory,
+                    teamMemoryArr[panzerArr[numGenesPanzer].team]);
+
         genes.setSelectCommand(panzerArr[numGenesPanzer].selectCommand);
 
     }
@@ -1506,7 +1557,9 @@ function update()
             numGenesPanzer = numSelectPanzer;
             genes.setData(panzerArr[numSelectPanzer].genes,
                 panzerArr[numSelectPanzer].sensor,
-                panzerArr[numSelectPanzer].state);
+                panzerArr[numSelectPanzer].state,
+                panzerArr[numSelectPanzer].memory,
+                teamMemoryArr[panzerArr[numSelectanzer].team]);
         }
         
 
@@ -1620,6 +1673,7 @@ function updateSensorPanzer(panzer,numP,barrierArr) // обновить сенс
             {
                 panzer.sensor.enemy = angleIm(panzerArr[numP].centerX, panzerArr[numP].centerY,
                             panzerArr[i].centerX, panzerArr[i].centerY);
+                panzer.sensor.enemy = Math.round(panzer.sensor.enemy);
             }
         }
     }
@@ -1856,14 +1910,73 @@ function completeGenesPanzer(panzer,numP)// исполнение генов та
     }
     else if (panzer.genes.commandArr[select].name=='mov')
     {
-        //let value = panzer.genes.commandArr[select].values[0];
+        let value0 = panzer.genes.commandArr[select].values[0];
+        let value1 = panzer.genes.commandArr[select].values[1];
+        let flagTeamMemory = false;
+        for (attr in panzer.memory)
+        {
+            if (value0==attr)
+            {
+                flagTeamMemory = true;
+                let value = valueParamPanzerGens(value1, panzer);
+                if (value!==false)
+
+                {
+                    panzer.memory[value0] = value;
+                }
+                else
+                {
+                    panzer.memory[value0] = value1;
+                }
+                
+            }
+        }
+        if (flagTeamMemory==false)
+        {
+            for (attr in teamMemoryArr[panzer.team])
+            {
+                if (value0==attr)
+                {
+                    let value = valueParamPanzerGens(value1, panzer);
+                    if (value!==false)
+
+                    {
+                        teamMemoryArr[panzer.team][value0] = value;//valueParamPanzerGens(value1, panzer);
+
+                    }
+                    else
+                    {
+                        teamMemoryArr[panzer.team][value0] = value1;
+                    }
+                    //break;
+                }
+            }
+
+        }
         select ++;
     }
     select %= new Genes().quantityCommand;
     panzer.selectCommand = select;
     panzer.energy -= minusEnergyMove / 40;;
 }
+function valueParamPanzerGens(key,panzer)
+{
+    let valueArr = panzer.sensor;
+    valueArr = { ...valueArr, ...panzer.state };
+    valueArr = { ...valueArr, ...panzer.memory };
+    valueArr = { ...valueArr, ...teamMemoryArr[panzer.team] };
+    if (keyUpDuration('KeyQ', 100)) console.log("team="+panzer.team,valueArr,teamMemoryArr);
+    for (attr in valueArr)
+    {
 
+        if (key===attr)
+        {
+          //  console.log('key: '+key,"attr: "+attr,'valueArr[attr]: '+valueArr[attr] )
+            return valueArr[attr];
+        }
+    }
+    return false;
+}
 function collisionPanzerWall(panzer) // проверка столкновения танка со стеной
 {
     for (let i = 0; i < wallArr.length;i++)
