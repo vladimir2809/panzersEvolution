@@ -108,6 +108,7 @@ var teamMemory = {
     MC4: 0,
 };
 var teamMemoryArr = [];
+var historyCommand = [];
 var maxParam = {
     maxHP:2000,
     speed:30,
@@ -823,15 +824,30 @@ var Genes = function () {
         context.fillRect(x,y,widthCom,580);
         context.fillStyle = 'white';
         context.font = '10px Arial';
+        if (historyCommand.length>0)
+        {
+            for (let i = 0; i < historyCommand.length;i++)
+            {
+                let value = historyCommand[i];
+                console.log('history ',historyCommand);
+                context.fillStyle = '#008800 ';
+                context.fillRect(x,y+value*12+3,widthCom,12);
+                context.fillStyle = 'white';
+                context.fillText(i,x+widthCom-10,y+value*12+12);
+                if (i==historyCommand.length-1)
+                {
+                    context.fillStyle = '#964b00 ';
+                    context.fillRect(x,y+value*12+4,widthCom,12);
+                }
+            }
+        }
+        
         let addX = 50;
         for (let i = 0; i < this.commandArr.length;i++)
         {
 
-            if (i==this.selectCommand)
-            {
-                context.fillStyle = '#964b00 ';
-                context.fillRect(x,y+i*12+4,widthCom,12);
-            }
+            
+            
             context.fillStyle = 'white';
             context.fillText(i,x+3,y+i*12+12);
             context.fillStyle = 'white';
@@ -934,9 +950,10 @@ window.addEventListener('load', function () {
     preload();
     create();
     setInterval(function () {
-        drawAll();
+       
         update();
-    },16);
+        drawAll();
+    },160);
 });
 function loadImageArr()// загрузить массив изображений
 {
@@ -1911,258 +1928,277 @@ function completeGenesPanzer(panzer,numP)// исполнение генов та
 {
     let select = panzer.selectCommand;
     //console.log(panzer.selectCommand);
-    if (panzer.genes.commandArr[select].name=='exec')
+    if (numP==numGenesPanzer) historyCommand = [];
+    let count = 0;
+    for (let i = 0; i < new Genes().quantityCommand;i++)
     {
-        let value = panzer.genes.commandArr[select].values[0];
-        let minusEnergy = minusEnergyMove / 10;
-        if (value==1 && panzer.dir!=0)
+        if (numP==numGenesPanzer)  historyCommand.push(select);
+        count++;
+        if (panzer.genes.commandArr[select].name=='exec')
         {
-            panzer.dir=0;
-            panzer.angleTower = panzer.angleBody = 270;
-            panzer.energy -= minusEnergy;
-        }
-        if (value==2 && panzer.dir!=1) 
-        {
-            panzer.dir=1; 
-            panzer.angleTower = panzer.angleBody = 0;
-            panzer.energy -= minusEnergy;
-        }
-        if (value==3 && panzer.dir!=2) 
-        {
-            panzer.dir=2;
-            panzer.angleTower = panzer.angleBody = 90;
-            panzer.energy -= minusEnergy;
-        }
-        if (value==4 && panzer.dir!=3) 
-        {
-            panzer.dir=3; 
-            panzer.angleTower = panzer.angleBody = 180;
-            panzer.energy -= minusEnergy;
-        }
-        minusEnergy = minusEnergyMove;
-        if (value==1 && panzer.dir==0){ panzer.y-=panzer.speed; panzer.energy -= minusEnergy;}
-        else if (value==2 && panzer.dir==1) {panzer.x+=panzer.speed; panzer.energy -= minusEnergy;}
-        else if (value==3 && panzer.dir==2) {panzer.y+=panzer.speed; panzer.energy -= minusEnergy;}
-        else if (value==4 && panzer.dir==3) {panzer.x-=panzer.speed; panzer.energy -= minusEnergy;}
+            let value = panzer.genes.commandArr[select].values[0];
+            let minusEnergy = minusEnergyMove / 10;
+            if (value==1 && panzer.dir!=0)
+            {
+                panzer.dir=0;
+                panzer.angleTower = panzer.angleBody = 270;
+                panzer.energy -= minusEnergy;
+            }
+            if (value==2 && panzer.dir!=1) 
+            {
+                panzer.dir=1; 
+                panzer.angleTower = panzer.angleBody = 0;
+                panzer.energy -= minusEnergy;
+            }
+            if (value==3 && panzer.dir!=2) 
+            {
+                panzer.dir=2;
+                panzer.angleTower = panzer.angleBody = 90;
+                panzer.energy -= minusEnergy;
+            }
+            if (value==4 && panzer.dir!=3) 
+            {
+                panzer.dir=3; 
+                panzer.angleTower = panzer.angleBody = 180;
+                panzer.energy -= minusEnergy;
+            }
+            minusEnergy = minusEnergyMove;
+            if (value==1 && panzer.dir==0){ panzer.y-=panzer.speed; panzer.energy -= minusEnergy;}
+            else if (value==2 && panzer.dir==1) {panzer.x+=panzer.speed; panzer.energy -= minusEnergy;}
+            else if (value==3 && panzer.dir==2) {panzer.y+=panzer.speed; panzer.energy -= minusEnergy;}
+            else if (value==4 && panzer.dir==3) {panzer.x-=panzer.speed; panzer.energy -= minusEnergy;}
         
-        if (value==5)
-        {
-            panzer.angleTower += 10;
-        }
-
-        if (value==6)
-        {
-            panzer.angleTower -= 10;
-        }
-
-        if (panzer.countAttack<panzer.countAttack+10) 
-        {
-            panzer.countAttack++;
-        }
-        if (value==0)
-        {
-            if (panzer.countAttack>=panzer.timeAttack && panzer.countPatrons>0)
+            if (value==5)
             {
-                bullets.shot(panzer.towerX1,panzer.towerY1,
-                            panzer.angleTower+mixingShot(panzer.accuracy),30,numP);
-                panzer.countAttack = 0;
-                panzer.countPatrons--;
+                panzer.angleTower += 10;
             }
-        }
-        select++;// переход на следуюшию команду
-    }
-    else if (panzer.genes.commandArr[select].name=='goto')
-    {
-        let value = panzer.genes.commandArr[select].values[0];
-        select += value;
-    }
-    else if (panzer.genes.commandArr[select].name=='mov')
-    {
-        let value0 = panzer.genes.commandArr[select].values[0];
-        let value1 = panzer.genes.commandArr[select].values[1];
-        let flagTeamMemory = false;
-        for (attr in panzer.memory)
-        {
-            if (value0==attr)
-            {
-                flagTeamMemory = true;
-                let value = valueParamPanzerGens(value1, panzer);
-                if (value!==false)
 
-                {
-                    panzer.memory[value0] = value;
-                }
-                else
-                {
-                    panzer.memory[value0] = value1;
-                }
-                
+            if (value==6)
+            {
+                panzer.angleTower -= 10;
             }
+
+            if (panzer.countAttack<panzer.countAttack+10) 
+            {
+                panzer.countAttack++;
+            }
+            if (value==0)
+            {
+                if (panzer.countAttack>=panzer.timeAttack && panzer.countPatrons>0)
+                {
+                    bullets.shot(panzer.towerX1,panzer.towerY1,
+                                panzer.angleTower+mixingShot(panzer.accuracy),30,numP);
+                    panzer.countAttack = 0;
+                    panzer.countPatrons--;
+                }
+            }
+            select++;// переход на следуюшию команду
+/*            select %= new Genes().quantityCommand; 
+            panzer.selectCommand = select;*/
+            break;;
         }
-        if (flagTeamMemory==false)
+        else if (panzer.genes.commandArr[select].name=='goto')
         {
-            for (attr in teamMemoryArr[panzer.team])
+            let value = panzer.genes.commandArr[select].values[0];
+           // historyCommand.push(select);
+            select += value;
+        }
+        else if (panzer.genes.commandArr[select].name=='mov')
+        {
+            let value0 = panzer.genes.commandArr[select].values[0];
+            let value1 = panzer.genes.commandArr[select].values[1];
+            let flagTeamMemory = false;
+            for (attr in panzer.memory)
             {
                 if (value0==attr)
                 {
+                    flagTeamMemory = true;
                     let value = valueParamPanzerGens(value1, panzer);
                     if (value!==false)
 
                     {
-                        teamMemoryArr[panzer.team][value0] = value;//valueParamPanzerGens(value1, panzer);
-
+                        panzer.memory[value0] = value;
                     }
                     else
                     {
-                        teamMemoryArr[panzer.team][value0] = value1;
+                        panzer.memory[value0] = value1;
                     }
-                    //break;
+                
                 }
             }
+            if (flagTeamMemory==false)
+            {
+                for (attr in teamMemoryArr[panzer.team])
+                {
+                    if (value0==attr)
+                    {
+                        let value = valueParamPanzerGens(value1, panzer);
+                        if (value!==false)
 
+                        {
+                            teamMemoryArr[panzer.team][value0] = value;//valueParamPanzerGens(value1, panzer);
+
+                        }
+                        else
+                        {
+                            teamMemoryArr[panzer.team][value0] = value1;
+                        }
+                        //break;
+                    }
+                }
+
+            }
+            //historyCommand.push(select);
+            select ++;
         }
-        select ++;
-    }
-    else if (panzer.genes.commandArr[select].name=='cmp')
-    {
-        let value1 = panzer.genes.commandArr[select].values[0];
-        let valueCmp = panzer.genes.commandArr[select].values[1];
-        let value2 = panzer.genes.commandArr[select].values[2];
-        let valueJmp1 = panzer.genes.commandArr[select].values[3];
-        let valueJmp2 = panzer.genes.commandArr[select].values[4];
-        if (valueCmp=="==")
+        else if (panzer.genes.commandArr[select].name=='cmp')
         {
-            if (value1==value2)
+            let value1 = panzer.genes.commandArr[select].values[0];
+            let valueCmp = panzer.genes.commandArr[select].values[1];
+            let value2 = panzer.genes.commandArr[select].values[2];
+            let valueJmp1 = panzer.genes.commandArr[select].values[3];
+            let valueJmp2 = panzer.genes.commandArr[select].values[4];
+           // historyCommand.push(select);
+            if (valueCmp=="==")
             {
-                select += valueJmp1;
-            }
-            else
-            {
-                select += valueJmp2;
-            }
+                if (value1==value2)
+                {
+                    select += valueJmp1;
+                }
+                else
+                {
+                    select += valueJmp2;
+                }
 
+            }
+            if (valueCmp=="!=")
+            {
+                if (value1!=value2)
+                {
+                    select += valueJmp1;
+                }
+                else
+                {
+                    select += valueJmp2;
+                }
+            }
+            if (valueCmp=='<')
+            {
+                if (value1<value2)
+                {
+                    select += valueJmp1;
+                }
+                else
+                {
+                    select += valueJmp2;
+                }
+
+            }
+            if (valueCmp==">")
+            {
+                if (value1>value2)
+                {
+                    select += valueJmp1;
+                }
+                else
+                {
+                    select += valueJmp2;
+                }
+
+            }
+            if (valueCmp=="<=")
+            {
+                if (value1<=value2)
+                {
+                    select += valueJmp1;
+                }
+                else
+                {
+                    select += valueJmp2;
+                }
+
+            }
+            if (valueCmp==">=")
+            {
+                if (value1>=value2)
+                {
+                    select += valueJmp1;
+                }
+                else
+                {
+                    select += valueJmp2;
+                }
+
+            }
         }
-        if (valueCmp=="!=")
+        else if (panzer.genes.commandArr[select].name=='calc')
         {
-            if (value1!=value2)
+            let valueMemory = panzer.genes.commandArr[select].values[0];
+            let arg1 = panzer.genes.commandArr[select].values[1];
+            let simbol = panzer.genes.commandArr[select].values[2];
+            let arg2 = panzer.genes.commandArr[select].values[3];
+            let flagTeamMemory = false;
+            function calcResult(arg1,arg2)
             {
-                select += valueJmp1;
-            }
-            else
-            {
-                select += valueJmp2;
-            }
-        }
-        if (valueCmp=='<')
-        {
-            if (value1<value2)
-            {
-                select += valueJmp1;
-            }
-            else
-            {
-                select += valueJmp2;
-            }
+                let res1 = valueParamPanzerGens(arg1, panzer);
+                let res2 = valueParamPanzerGens(arg2, panzer);
+                let resArg1 = null;
+                let resArg2 = null;
+                if (res1!==false)
 
-        }
-        if (valueCmp==">")
-        {
-            if (value1>value2)
-            {
-                select += valueJmp1;
-            }
-            else
-            {
-                select += valueJmp2;
-            }
+                {
+                    resArg1 = res1;
+                }
+                else
+                {
+                    resArg1 = arg1;
+                }
+                if (res2!==false)
 
-        }
-        if (valueCmp=="<=")
-        {
-            if (value1<=value2)
-            {
-                select += valueJmp1;
+                {
+                    resArg2 = res2;
+                }
+                else
+                {
+                    resArg2 = arg2;
+                }
+                return calc2Arg(simbol,resArg1,resArg2);
+                //panzer.memory[valueMemory] = calc2Arg(simbol,resArg1,resArg2);
             }
-            else
-            {
-                select += valueJmp2;
-            }
-
-        }
-        if (valueCmp==">=")
-        {
-            if (value1>=value2)
-            {
-                select += valueJmp1;
-            }
-            else
-            {
-                select += valueJmp2;
-            }
-
-        }
-    }
-    else if (panzer.genes.commandArr[select].name=='calc')
-    {
-        let valueMemory = panzer.genes.commandArr[select].values[0];
-        let arg1 = panzer.genes.commandArr[select].values[1];
-        let simbol = panzer.genes.commandArr[select].values[2];
-        let arg2 = panzer.genes.commandArr[select].values[3];
-        let flagTeamMemory = false;
-        function calcResult(arg1,arg2)
-        {
-            let res1 = valueParamPanzerGens(arg1, panzer);
-            let res2 = valueParamPanzerGens(arg2, panzer);
-            let resArg1 = null;
-            let resArg2 = null;
-            if (res1!==false)
-
-            {
-                resArg1 = res1;
-            }
-            else
-            {
-                resArg1 = arg1;
-            }
-            if (res2!==false)
-
-            {
-                resArg2 = res2;
-            }
-            else
-            {
-                resArg2 = arg2;
-            }
-            return calc2Arg(simbol,resArg1,resArg2);
-            //panzer.memory[valueMemory] = calc2Arg(simbol,resArg1,resArg2);
-        }
       
-        for (attr in panzer.memory)
-        {
-            if (valueMemory==attr)
-            {
-                flagTeamMemory = true;
-                panzer.memory[valueMemory] = calcResult(arg1, arg2);
-
-            }
-        }
-        if (flagTeamMemory==false)
-        {
-            for (attr in teamMemoryArr[panzer.team])
+            for (attr in panzer.memory)
             {
                 if (valueMemory==attr)
                 {
-                    teamMemoryArr[panzer.team][valueMemory] = calcResult(arg1,arg2);
+                    flagTeamMemory = true;
+                    panzer.memory[valueMemory] = calcResult(arg1, arg2);
+
                 }
             }
+            if (flagTeamMemory==false)
+            {
+                for (attr in teamMemoryArr[panzer.team])
+                {
+                    if (valueMemory==attr)
+                    {
+                        teamMemoryArr[panzer.team][valueMemory] = calcResult(arg1,arg2);
+                    }
+                }
             
+            }
+            //historyCommand.push(select);
+            select ++;
         }
-        select ++;
-    }
 
-    select %= new Genes().quantityCommand;
+        select %= new Genes().quantityCommand; 
+        panzer.selectCommand = select;
+        panzer.energy -= minusEnergyMove / 40;;
+    }  
+    select %= new Genes().quantityCommand; 
     panzer.selectCommand = select;
-    panzer.energy -= minusEnergyMove / 40;;
+ 
+    console.log('count: '+count);
+    //console.log('history: ' +historyCommand);
     if (panzer.countAttack<panzer.countAttack+20)
     {
         panzer.countAttack++;
