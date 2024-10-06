@@ -615,11 +615,23 @@ var Genes = function () {
         {
             name: 'numQuanCommand',
             valueMin: 1,
-            valueMax: this.quantityCommand-1,
+            valueMax: this.quantityCommand - 1,
         },
         {
             name: 'memory',
-            values:['M1','M2','M3','M4','M5','M6','M7','M8','MC1','MC2','MC3','MC4',],
+            values: ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'MC1', 'MC2', 'MC3', 'MC4',],
+            valueMin: null,
+            valueMax: null,
+        },
+        {
+            name: 'comparison',
+            values: ["==","!=",">","<",">=","<=",],
+            valueMin: null,
+            valueMax: null,
+        },
+        {
+            name: 'arithmetic',
+            values:["+","-","*","/",],
             valueMin: null,
             valueMax: null,
         },
@@ -640,6 +652,12 @@ var Genes = function () {
             //values:['bonus','enemy',],
             valueMin: -1000,
             valueMax:  1000,
+        },
+        {
+            name: 'null',
+            values:[null],
+            valueMin: null,
+            valueMax:  null,
         },
 
 
@@ -671,14 +689,54 @@ var Genes = function () {
                     type:['memory',]
                 },
                 {
-                    type:['memory','sensor','state','integer',]
+                    type:['memory','sensor','state','integer','null']
                     //type:['sensor','state']
 
 
                 },
             ],
-            countValue: 3,  
+            countValue: 2,  
         },
+        {
+            name: 'cmp',
+            valueArr:[
+                {
+                    type:['memory','sensor','state','integer','null']
+                },
+                {
+                    type:['comparison',]
+                },
+                {
+                    type:['memory','sensor','state','integer','null']
+                },
+                {
+                    type:['numQuanCommand']
+                },
+                {
+                    type:['numQuanCommand']
+                },
+            ],
+            countValue: 5,  
+        },
+        {
+            name: 'calc',
+            valueArr:[
+                {
+                    type:['memory']
+                },
+                {
+                    type:['memory','sensor','state','integer','null']
+                },
+                {
+                    type:['arithmetic',]
+                },
+                {
+                    type:['memory','sensor','state','integer','null']
+                },
+            ],
+            countValue: 4,  
+        },
+
 
     ];
     for (let i = 0; i < this.commandDescr.length;i++)
@@ -760,12 +818,12 @@ var Genes = function () {
     {
         let x = 820;
         y = 10;
-        let widthCom = 210;
+        let widthCom = 200;
         context.fillStyle = 'blue';
         context.fillRect(x,y,widthCom,580);
         context.fillStyle = 'white';
         context.font = '10px Arial';
-        let addX = 30;
+        let addX = 50;
         for (let i = 0; i < this.commandArr.length;i++)
         {
 
@@ -775,10 +833,15 @@ var Genes = function () {
                 context.fillRect(x,y+i*12+4,widthCom,12);
             }
             context.fillStyle = 'white';
-            context.fillText(this.commandArr[i].name,x+3,y+i*12+12);
+            context.fillText(i,x+3,y+i*12+12);
+            context.fillStyle = 'white';
+            context.fillText(this.commandArr[i].name,x+20,y+i*12+12);
+            let oldX = addX;
             for (let j = 0; j < this.commandArr[i].values.length;j++)
             {
-                context.fillText(this.commandArr[i].values[j],x+addX+j*addX,y+i*12+12);
+ 
+                context.fillText(this.commandArr[i].values[j],x+oldX/*+addX+j*addX*/,y+i*12+12);
+                oldX += context.measureText(this.commandArr[i].values[j]).width + 10;
 
             }
         }
@@ -912,7 +975,7 @@ function create()
     canvas = document.getElementById("canvas");
     context = canvas.getContext("2d");
     initKeyboardAndMouse(['KeyA', 'KeyW', 'KeyS', 'KeyD',"NumpadSubtract",'NumpadAdd','Minus','Equal',
-                            'Digit1','Digit2','Digit3','Digit4','Digit5','KeyQ',]);
+                            'Digit1','Digit2','Digit3','Digit4','Digit5','KeyQ','KeyH',]);
     srand(2);
     updateSize();
 /*    canvas.setAttribute('width',canvasWidth);
@@ -1465,7 +1528,12 @@ function update()
 {
   
     let countBeingPanzer = 0;
+
     if (modeGame == 'GOD') cameraMove();
+    if (keyUpDuration('KeyH',100)==true)
+    {
+        modeGame = modeGame == 'GOD' ? 'HERO' : "GOD";
+    }
 /*    if (checkPressKey('KeyQ')==true || keyUpDuration('KeyQ',100)==true)
     {
 *//*        testFlagDirParam = !testFlagDirParam;
@@ -1559,7 +1627,7 @@ function update()
                 panzerArr[numSelectPanzer].sensor,
                 panzerArr[numSelectPanzer].state,
                 panzerArr[numSelectPanzer].memory,
-                teamMemoryArr[panzerArr[numSelectanzer].team]);
+                teamMemoryArr[panzerArr[numSelectPanzer].team]);
         }
         
 
@@ -1955,9 +2023,186 @@ function completeGenesPanzer(panzer,numP)// исполнение генов та
         }
         select ++;
     }
+    else if (panzer.genes.commandArr[select].name=='cmp')
+    {
+        let value1 = panzer.genes.commandArr[select].values[0];
+        let valueCmp = panzer.genes.commandArr[select].values[1];
+        let value2 = panzer.genes.commandArr[select].values[2];
+        let valueJmp1 = panzer.genes.commandArr[select].values[3];
+        let valueJmp2 = panzer.genes.commandArr[select].values[4];
+        if (valueCmp=="==")
+        {
+            if (value1==value2)
+            {
+                select += valueJmp1;
+            }
+            else
+            {
+                select += valueJmp2;
+            }
+
+        }
+        if (valueCmp=="!=")
+        {
+            if (value1!=value2)
+            {
+                select += valueJmp1;
+            }
+            else
+            {
+                select += valueJmp2;
+            }
+        }
+        if (valueCmp=='<')
+        {
+            if (value1<value2)
+            {
+                select += valueJmp1;
+            }
+            else
+            {
+                select += valueJmp2;
+            }
+
+        }
+        if (valueCmp==">")
+        {
+            if (value1>value2)
+            {
+                select += valueJmp1;
+            }
+            else
+            {
+                select += valueJmp2;
+            }
+
+        }
+        if (valueCmp=="<=")
+        {
+            if (value1<=value2)
+            {
+                select += valueJmp1;
+            }
+            else
+            {
+                select += valueJmp2;
+            }
+
+        }
+        if (valueCmp==">=")
+        {
+            if (value1>=value2)
+            {
+                select += valueJmp1;
+            }
+            else
+            {
+                select += valueJmp2;
+            }
+
+        }
+    }
+    else if (panzer.genes.commandArr[select].name=='calc')
+    {
+        let valueMemory = panzer.genes.commandArr[select].values[0];
+        let arg1 = panzer.genes.commandArr[select].values[1];
+        let simbol = panzer.genes.commandArr[select].values[2];
+        let arg2 = panzer.genes.commandArr[select].values[3];
+        let flagTeamMemory = false;
+        function calcResult(arg1,arg2)
+        {
+            let res1 = valueParamPanzerGens(arg1, panzer);
+            let res2 = valueParamPanzerGens(arg2, panzer);
+            let resArg1 = null;
+            let resArg2 = null;
+            if (res1!==false)
+
+            {
+                resArg1 = res1;
+            }
+            else
+            {
+                resArg1 = arg1;
+            }
+            if (res2!==false)
+
+            {
+                resArg2 = res2;
+            }
+            else
+            {
+                resArg2 = arg2;
+            }
+            return calc2Arg(simbol,resArg1,resArg2);
+            //panzer.memory[valueMemory] = calc2Arg(simbol,resArg1,resArg2);
+        }
+      
+        for (attr in panzer.memory)
+        {
+            if (valueMemory==attr)
+            {
+                flagTeamMemory = true;
+                panzer.memory[valueMemory] = calcResult(arg1, arg2);
+
+            }
+        }
+        if (flagTeamMemory==false)
+        {
+            for (attr in teamMemoryArr[panzer.team])
+            {
+                if (valueMemory==attr)
+                {
+                    teamMemoryArr[panzer.team][valueMemory] = calcResult(arg1,arg2);
+                }
+            }
+            
+        }
+        select ++;
+    }
+
     select %= new Genes().quantityCommand;
     panzer.selectCommand = select;
     panzer.energy -= minusEnergyMove / 40;;
+    if (panzer.countAttack<panzer.countAttack+20)
+    {
+        panzer.countAttack++;
+    }
+    if (panzer.countAttack > panzer.timeAttack) 
+    {
+        panzer.state.attack = 1;
+    }
+    else
+    {
+        panzer.state.attack = 0;
+    }
+}
+function calc2Arg(simbol,arg1,arg2)
+{
+    if (simbol=='+')
+    {
+        /*if (arg1 == null) return arg2;
+        if (arg2 == null) return arg1;*/
+        return arg1 + arg2;
+    }
+    if (simbol=='-')
+    {
+        /*if (arg1 == null) return arg2;
+        if (arg2 == null) return arg1;*/
+        return arg1 - arg2;
+    }
+    if (simbol=='*')
+    {
+        /*if (arg1 == null) return arg2;
+        if (arg2 == null) return arg1;*/
+        return arg1 * arg2;
+    }
+    if (simbol=='/')
+    {
+        /*if (arg1 == null) return arg2;
+        if (arg2 == null) return arg1;*/
+        if (arg2 == 0) return 0;
+        return arg1 / arg2;
+    }
 }
 function valueParamPanzerGens(key,panzer)
 {
