@@ -2,9 +2,9 @@
 var context = null;
 /*var canvasWidth = 1024;
 var canvasHeight = 600*/;
-let screenWidth = 1124;//option[numOption].widthScreenBlock*mapSize;// ширина экрана
+let screenWidth = 1324;//option[numOption].widthScreenBlock*mapSize;// ширина экрана
 let screenHeight = 768;// option[numOption].heightScreenBlock*mapSize;// высота экрана
-var windowWidth = 1124;//document.documentElement.clientWidth;
+var windowWidth = 1324;//document.documentElement.clientWidth;
 var windowHeight = 768;//document.documentElement.clientHeight;
 var windowWidthOld = windowWidth;
 var windowHeighOld = windowHeight;
@@ -749,75 +749,145 @@ var Genes = function () {
         values: [],
     };
     this.commandArr = [];
+    this.commandArrTwo = [];
+    this.initCommandOne = function ()
+    {
+        let R1 = randomInteger(0,this.commandDescr.length-1);    
+        let randArr = [];
+        for (let j = 0; j < this.commandDescr[R1].countValue;j++)
+        {
+            let min = null;
+            let max = null;
+            let valueStr = null;
+            let flagBreak = false;
+            for (let k = 0; k < this.typeDataValue.length;k++)
+            {
+                let R2=randomInteger(0,this.commandDescr[R1].valueArr[j].type.length)
+                for (let k1 = 0; k1 < this.commandDescr[R1].valueArr[j].type.length;k1++)
+                if (this.typeDataValue[k].name==this.commandDescr[R1].valueArr[j].type[k1])
+                {   
+                    //let R2 = randomInteger(0,this.commandDescr[R1].valueArr[j].type.length);
 
+                    //alert(123);
+                    min = this.typeDataValue[k].valueMin;
+                    max = this.typeDataValue[k].valueMax;
+                    if (this.typeDataValue[k].values!=undefined)
+                    {
+                        let R3 = randomInteger(0,this.typeDataValue[k].values.length-1);
+                        valueStr = this.typeDataValue[k].values[R3];
+                        if (k1==R2)
+                        {
+                            flagBreak = true;
+                            break;
+                        }
+
+                    }
+                       
+               
+                }
+                if (flagBreak == true) break;
+            }
+            //alert(min+' '+ max);
+            if (min==null && max==null)
+            {
+                randArr.push(valueStr);
+
+            }
+            else
+            {
+                randArr.push(randomInteger(min,max));
+            }
+               
+        }
+        //alert(randArr[0]);
+        //console.log(randArr);
+        let commandOne = JSON.parse(JSON.stringify(this.command));
+        commandOne.name = this.commandDescr[R1].name;
+        for (let k = 0; k < randArr.length;k++)
+        {
+            commandOne.values[k] = randArr[k];
+
+        }
+        return commandOne;
+    }
     this.initCommandRand = function()
     {
         for (let i = 0; i < this.quantityCommand;i++)
         {
-            let R1 = randomInteger(0,this.commandDescr.length-1);
-            
-            let randArr = [];
-            for (let j = 0; j < this.commandDescr[R1].countValue;j++)
-            {
-                let min = null;
-                let max = null;
-                let valueStr = null;
-                let flagBreak = false;
-                for (let k = 0; k < this.typeDataValue.length;k++)
-                {
-                    let R2=randomInteger(0,this.commandDescr[R1].valueArr[j].type.length)
-                    for (let k1 = 0; k1 < this.commandDescr[R1].valueArr[j].type.length;k1++)
-                    if (this.typeDataValue[k].name==this.commandDescr[R1].valueArr[j].type[k1])
-                    {   
-                        //let R2 = randomInteger(0,this.commandDescr[R1].valueArr[j].type.length);
-
-                        //alert(123);
-                        min = this.typeDataValue[k].valueMin;
-                        max = this.typeDataValue[k].valueMax;
-                        if (this.typeDataValue[k].values!=undefined)
-                        {
-                            let R3 = randomInteger(0,this.typeDataValue[k].values.length-1);
-                            valueStr = this.typeDataValue[k].values[R3];
-                            if (k1==R2)
-                            {
-                                flagBreak = true;
-                                break;
-                            }
-
-                        }
-                       
-               
-                    }
-                    if (flagBreak == true) break;
-                }
-                //alert(min+' '+ max);
-                if (min==null && max==null)
-                {
-                    randArr.push(valueStr);
-
-                }
-                else
-                {
-                    randArr.push(randomInteger(min,max));
-                }
-               
-            }
-            //alert(randArr[0]);
-            //console.log(randArr);
-            let commandOne = JSON.parse(JSON.stringify(this.command));
-            commandOne.name = this.commandDescr[R1].name;
-            for (let k = 0; k < randArr.length;k++)
-            {
-                commandOne.values[k] = randArr[k];
-
-            }
-            this.commandArr.push(commandOne);
+            this.commandArr.push(this.initCommandOne());
         }
         console.log(this.commandArr);
+        /*if (this.commandArrTwo.length<=0)
+        {
+            this.commandArrTwo = JSON.parse(JSON.stringify(this.commandArr));
+        }*/
     }
-    this.draw = function (context) 
+    this.changeGenes=function (count1,count2)
     {
-        let x = 820;
+      
+        let commandArr2 = JSON.parse(JSON.stringify(this.commandArr));
+      //  console.log('Random Num:');
+        for (let i = 0; i < count1;i++)
+        {
+            let R = randomInteger(0, this.quantityCommand-1);
+            let newCommand = this.initCommandOne();
+            commandArr2[R] = newCommand;
+            console.log('R=' + R);
+        }
+        for (let i = 0; i < count2;i++)
+        {
+            let R = randomInteger(0, this.quantityCommand-1);
+            //console.log('R=' + R);
+            let name = this.commandArr[R].name;
+            let flagBreak = false;
+            for (let j = 0; j < this.commandDescr.length;j++)
+            {
+                if (name==this.commandDescr[j].name)
+                {
+                    for (let k = 0; k < this.commandDescr[j].valueArr.length;k++)
+                    {
+                        let typeArr = this.commandDescr[j].valueArr[k].type;
+                        let R2 =randomInteger(0,typeArr.length-1);
+                        {
+                            for (let k1 = 0; k1 < this.typeDataValue.length;k1++)
+                            {       
+                                if (typeArr[R2]==this.typeDataValue[k1].name)
+                                {
+                                    let values = this.typeDataValue[k1].values;
+                                    let min= this.typeDataValue[k1].valueMin;
+                                    let max = this.typeDataValue[k1].valueMax;
+                                    let result = null;                                   
+                                    if (min===null && max===null)
+                                    {
+                                        let R3 = randomInteger(0, values.length - 1);
+                                        result = values[R3];                                      
+                                    }
+                                    else 
+                                    {
+                                        result = randomInteger(min, max);
+                                    }
+                                    console.log('VALUE', result);
+                                    commandArr2[R].values[R2] = result;
+                              
+                                    flagBreak = true; 
+                                    break;   
+                                }
+                            }
+
+                            if (flagBreak == true) break;
+                        }
+                        if (flagBreak == true) break;
+                    }
+                }
+                if (flagBreak == true) break;
+            }
+           
+        }
+        return commandArr2;
+    }
+    this.draw = function (context,xx=820,genesArr=null) 
+    {
+        let x = xx;
         y = 10;
         let widthCom = 200;
         context.fillStyle = 'blue';
@@ -829,7 +899,7 @@ var Genes = function () {
             for (let i = 0; i < historyCommand.length;i++)
             {
                 let value = historyCommand[i];
-                console.log('history ',historyCommand);
+                /*console.log('history ',historyCommand);*/
                 context.fillStyle = '#008800 ';
                 context.fillRect(x,y+value*12+3,widthCom,12);
                 context.fillStyle = 'white';
@@ -843,6 +913,15 @@ var Genes = function () {
         }
         
         let addX = 50;
+        let commandArr = null;
+        if (genesArr==null || genesArr.length==0)
+        {
+             commandArr = JSON.parse(JSON.stringify(this.commandArr));
+        }
+        else
+        {
+             commandArr = JSON.parse(JSON.stringify(genesArr));
+        }
         for (let i = 0; i < this.commandArr.length;i++)
         {
 
@@ -850,77 +929,104 @@ var Genes = function () {
             
             context.fillStyle = 'white';
             context.fillText(i,x+3,y+i*12+12);
-            context.fillStyle = 'white';
-            context.fillText(this.commandArr[i].name,x+20,y+i*12+12);
-            let oldX = addX;
-            for (let j = 0; j < this.commandArr[i].values.length;j++)
+            if (x!=820 && genesArr!=null && genesArr.length>0)
             {
- 
-                context.fillText(this.commandArr[i].values[j],x+oldX/*+addX+j*addX*/,y+i*12+12);
-                oldX += context.measureText(this.commandArr[i].values[j]).width + 10;
+                if (this.commandArr[i].name==genesArr[i].name)
+                {
+                    context.fillStyle = 'white';
+
+                }
+                else
+                {
+                    context.fillStyle = 'red';
+                }
+
+            }
+            context.fillText(commandArr[i].name,x+20,y+i*12+12);
+            let oldX = addX;
+            for (let j = 0; j < commandArr[i].values.length;j++)
+            {
+                
+                if (x!=820 && genesArr!=null && genesArr.length>0)
+                {
+                    if (this.commandArr[i].values[j]==genesArr[i].values[j])
+                    {
+                        context.fillStyle = 'white';
+
+                    }
+                    else
+                    {
+                        context.fillStyle = 'red';
+                    }
+                }                    
+                context.fillText(commandArr[i].values[j],x+oldX/*+addX+j*addX*/,y+i*12+12);
+                oldX += context.measureText(commandArr[i].values[j]).width + 10;
 
             }
         }
-        
-        let index = 0;
-        addX = 45/*+widthCom*/;
-        let multY = 18;
-        colorText = 'white';
-        y += 10;
-        x += 85+widthCom/2;
-        context.font = '14px Arial';
-        context.fillStyle = 'white';
-        context.fillText("Sensor",x+addX,y);
-        context.font = '12px Arial';
-        for (prop in this.sensor)
+        if (genesArr==null)
         {
-            context.fillStyle = "blue";
-            context.fillRect(x + /*85 +*/ addX * 2-4, y + index * multY + multY/3+1, 30, 15);
-            context.fillStyle = colorText;
-            context.fillText(prop,x+/*85+*/addX,y+index*multY+multY);
 
-            context.fillText(this.sensor[prop],x+/*85+*/addX*2,y+index*multY+multY);
-            index++;
-        }
-        y += multY * 4;
-        index = 0;
-        context.font = '14px Arial';
-        context.fillStyle = 'white';
-        context.fillText("State",x+addX,y);
-        context.font = '12px Arial';
-        for (prop in this.state)
-        {
-            context.fillStyle = "blue";
-            context.fillRect(x + /*85 +*/ addX * 2-4, y + index * multY + multY/3+1, 30, 15);
-            context.fillStyle = colorText;
-            context.fillText(prop,x+/*85+*/addX,y+index*multY+multY);
+            let index = 0;
+            addX = 45/*+widthCom*/;
+            let multY = 18;
+            colorText = 'white';
+            y += 10;
+            x += 85+widthCom/2;
+            context.font = '14px Arial';
+            context.fillStyle = 'white';
+            context.fillText("Sensor",x+addX,y);
+            context.font = '12px Arial';
+            for (prop in this.sensor)
+            {
+                context.fillStyle = "blue";
+                context.fillRect(x + /*85 +*/ addX * 2-4, y + index * multY + multY/3+1, 30, 15);
+                context.fillStyle = colorText;
+                context.fillText(prop,x+/*85+*/addX,y+index*multY+multY);
 
-            context.fillText(this.state[prop],x+/*85+*/addX*2,y+index*multY+multY);
-            index++;
-        }
-        index = 0;
-        y += multY * 8;
-        for (prop in this.memory)
-        {
-            context.fillStyle = "blue";
-            context.fillRect(x + /*85 +*/ addX * 2-4, y + index * multY + multY/3+1, 30, 15);
-            context.fillStyle = colorText;
-            context.fillText(prop,x+/*85+*/addX,y+index*multY+multY);
+                context.fillText(this.sensor[prop],x+/*85+*/addX*2,y+index*multY+multY);
+                index++;
+            }
+            y += multY * 4;
+            index = 0;
+            context.font = '14px Arial';
+            context.fillStyle = 'white';
+            context.fillText("State",x+addX,y);
+            context.font = '12px Arial';
+            for (prop in this.state)
+            {
+                context.fillStyle = "blue";
+                context.fillRect(x + /*85 +*/ addX * 2-4, y + index * multY + multY/3+1, 30, 15);
+                context.fillStyle = colorText;
+                context.fillText(prop,x+/*85+*/addX,y+index*multY+multY);
 
-            context.fillText(this.memory[prop],x+/*85+*/addX*2,y+index*multY+multY);
-            index++;
-            if (index == 8) y += 20;
-        }
-        for (prop in this.teamMemory)
-        {
-            context.fillStyle = "blue";
-            context.fillRect(x + /*85 +*/ addX * 2-4, y + index * multY + multY/3+1, 30, 15);
-            context.fillStyle = colorText;
-            context.fillText(prop,x+/*85+*/addX,y+index*multY+multY);
+                context.fillText(this.state[prop],x+/*85+*/addX*2,y+index*multY+multY);
+                index++;
+            }
+            index = 0;
+            y += multY * 8;
+            for (prop in this.memory)
+            {
+                context.fillStyle = "blue";
+                context.fillRect(x + /*85 +*/ addX * 2-4, y + index * multY + multY/3+1, 30, 15);
+                context.fillStyle = colorText;
+                context.fillText(prop,x+/*85+*/addX,y+index*multY+multY);
 
-            context.fillText(this.teamMemory[prop],x+/*85+*/addX*2,y+index*multY+multY);
-            index++;
-            if (index == 8) y += 20;
+                context.fillText(this.memory[prop],x+/*85+*/addX*2,y+index*multY+multY);
+                index++;
+                if (index == 8) y += 20;
+            }
+            for (prop in this.teamMemory)
+            {
+                context.fillStyle = "blue";
+                context.fillRect(x + /*85 +*/ addX * 2-4, y + index * multY + multY/3+1, 30, 15);
+                context.fillStyle = colorText;
+                context.fillText(prop,x+/*85+*/addX,y+index*multY+multY);
+
+                context.fillText(this.teamMemory[prop],x+/*85+*/addX*2,y+index*multY+multY);
+                index++;
+                if (index == 8) y += 20;
+            }
         }
     }
     this.setData=function(data,sensor,state,memory,teamMemory)
@@ -953,7 +1059,7 @@ window.addEventListener('load', function () {
        
         update();
         drawAll();
-    },160);
+    },16);
 });
 function loadImageArr()// загрузить массив изображений
 {
@@ -992,7 +1098,7 @@ function create()
     canvas = document.getElementById("canvas");
     context = canvas.getContext("2d");
     initKeyboardAndMouse(['KeyA', 'KeyW', 'KeyS', 'KeyD',"NumpadSubtract",'NumpadAdd','Minus','Equal',
-                            'Digit1','Digit2','Digit3','Digit4','Digit5','KeyQ','KeyH',]);
+                           'Space','Digit1','Digit2','Digit3','Digit4','Digit5','KeyQ','KeyH',]);
     srand(2);
     updateSize();
 /*    canvas.setAttribute('width',canvasWidth);
@@ -1244,7 +1350,12 @@ function drawAll()
     context.fillStyle = 'gray';
     context.fillRect(camera.width,1,widthSide,screenHeight);
     context.fillRect(1,camera.height,screenWidth,heightSide);
+
+
+    /* DRAW GENES*/
     genes.draw(context);
+    genes.draw(context,1120,genes.commandArrTwo);
+
 
     context.font='25px Arial';
     context.fillStyle = 'red';
@@ -1551,6 +1662,11 @@ function update()
     {
         modeGame = modeGame == 'GOD' ? 'HERO' : "GOD";
     }
+    if (checkPressKey('Space')==true)
+    {
+     
+        genes.commandArrTwo = genes.changeGenes(0,25);
+    }
 /*    if (checkPressKey('KeyQ')==true || keyUpDuration('KeyQ',100)==true)
     {
 *//*        testFlagDirParam = !testFlagDirParam;
@@ -1618,13 +1734,14 @@ function update()
     bonuses.update();
     if (modeGame=='GOD' )
     {
+        let flag = false;
         if (mouseLeftClick()==true)
         for (let i = 0; i < panzerArr.length;i++)
         {
             if (checkInObj(panzerArr[i],mouseX/scale+camera.x,mouseY/scale+camera.y))
             {
                 numGenesPanzer = i;
-               
+                flag = true;
             }
         }
         genes.setData(panzerArr[numGenesPanzer].genes,
@@ -1632,6 +1749,11 @@ function update()
                     panzerArr[numGenesPanzer].state,
                     panzerArr[numGenesPanzer].memory,
                     teamMemoryArr[panzerArr[numGenesPanzer].team]);
+        if (flag==true)
+        {
+
+            genes.commandArrTwo = JSON.parse(JSON.stringify(genes.commandArr));
+        }
 
         genes.setSelectCommand(panzerArr[numGenesPanzer].selectCommand);
 
@@ -2197,7 +2319,7 @@ function completeGenesPanzer(panzer,numP)// исполнение генов та
     select %= new Genes().quantityCommand; 
     panzer.selectCommand = select;
  
-    console.log('count: '+count);
+    /*console.log('count: '+count);*/
     //console.log('history: ' +historyCommand);
     if (panzer.countAttack<panzer.countAttack+20)
     {
