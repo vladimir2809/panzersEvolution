@@ -826,7 +826,7 @@ var Genes = function () {
     {
       
         let commandArr2 = JSON.parse(JSON.stringify(genes));
-      //  console.log('Random Num:');
+        console.log('GENES', genes);
         for (let i = 0; i < count1;i++)
         {
             let R = randomInteger(0, this.quantityCommand-1);
@@ -834,6 +834,7 @@ var Genes = function () {
             commandArr2[R] = newCommand;
             console.log('R=' + R);
         }
+        genes = JSON.parse(JSON.stringify(commandArr2));
         for (let i = 0; i < count2;i++)
         {
             let R = randomInteger(0, this.quantityCommand-1);
