@@ -817,15 +817,15 @@ var Genes = function () {
             this.commandArr.push(this.initCommandOne());
         }
         console.log(this.commandArr);
-        /*if (this.commandArrTwo.length<=0)
+        if (this.commandArrTwo.length<=0)
         {
             this.commandArrTwo = JSON.parse(JSON.stringify(this.commandArr));
-        }*/
+        }
     }
-    this.changeGenes=function (count1,count2)
+    this.changeGenes=function (genes,count1,count2)
     {
       
-        let commandArr2 = JSON.parse(JSON.stringify(this.commandArr));
+        let commandArr2 = JSON.parse(JSON.stringify(genes));
       //  console.log('Random Num:');
         for (let i = 0; i < count1;i++)
         {
@@ -838,19 +838,22 @@ var Genes = function () {
         {
             let R = randomInteger(0, this.quantityCommand-1);
             //console.log('R=' + R);
-            let name = this.commandArr[R].name;
+            let name = genes[R].name// this.commandArr[R].name;
             let flagBreak = false;
             for (let j = 0; j < this.commandDescr.length;j++)
             {
                 if (name==this.commandDescr[j].name)
                 {
-                    for (let k = 0; k < this.commandDescr[j].valueArr.length;k++)
+                    //for (let k = 0; k < this.commandDescr[j].valueArr.length;k++)
+                    let k = randomInteger(0, this.commandDescr[j].countValue-1);
                     {
+
                         let typeArr = this.commandDescr[j].valueArr[k].type;
                         let R2 =randomInteger(0,typeArr.length-1);
                         {
                             for (let k1 = 0; k1 < this.typeDataValue.length;k1++)
                             {       
+                                
                                 if (typeArr[R2]==this.typeDataValue[k1].name)
                                 {
                                     let values = this.typeDataValue[k1].values;
@@ -867,7 +870,7 @@ var Genes = function () {
                                         result = randomInteger(min, max);
                                     }
                                     console.log('VALUE', result);
-                                    commandArr2[R].values[R2] = result;
+                                    commandArr2[R].values[k] = result;
                               
                                     flagBreak = true; 
                                     break;   
@@ -1662,10 +1665,13 @@ function update()
     {
         modeGame = modeGame == 'GOD' ? 'HERO' : "GOD";
     }
-    if (checkPressKey('Space')==true)
+    let flagChangeGenes=false;
+    if (keyUpDuration('Space',100)/*checkPressKey('Space')==true*/)
     {
-     
-        genes.commandArrTwo = genes.changeGenes(0,25);
+        panzerArr[numGenesPanzer].genes.commandArr = JSON.parse(JSON.stringify(genes.commandArrTwo));
+        //genes.commandArrTwo = panzerArr[numGenesPanzer].genes.commandArr;
+        genes.commandArrTwo = genes.changeGenes(genes.commandArrTwo,10,100);
+        flagChangeGenes = true;
     }
 /*    if (checkPressKey('KeyQ')==true || keyUpDuration('KeyQ',100)==true)
     {
