@@ -2,9 +2,9 @@
 var context = null;
 /*var canvasWidth = 1024;
 var canvasHeight = 600*/;
-let screenWidth = 1324;//option[numOption].widthScreenBlock*mapSize;// ширина экрана
+let screenWidth = 1124;//option[numOption].widthScreenBlock*mapSize;// ширина экрана
 let screenHeight = 768;// option[numOption].heightScreenBlock*mapSize;// высота экрана
-var windowWidth = 1324;//document.documentElement.clientWidth;
+var windowWidth = 1124;//document.documentElement.clientWidth;
 var windowHeight = 768;//document.documentElement.clientHeight;
 var windowWidthOld = windowWidth;
 var windowHeighOld = windowHeight;
@@ -23,19 +23,26 @@ var quantityPanzer = 64;
 var quantityWall = 64;
 var quantityBonus = 150;
 
+
 var modeGame = 'GOD';// 'GOD', 'HERO', 'EGREGOR'
+var visible = true;
 var numSelectPanzer = 0;
 var numGenesPanzer = 0;
 var distAttack = 300;
 var minusEnergyMove = 2;
+var startPatrons = 10;
+var countBeingPanzer = 0;
 var imageArr=new Map();// массив картинок
 var nameImageArr = ['energy','patrons','HP'];
 var countLoadImage=0;// количество загруженных картинок
 var countLoopIter = 0;
+var numGeneration = 1;
 var sensorValue = 0;
 var helperArr = [];
 var progresslevel = [];
-var maxLevel = 2;
+var maxLevel = 50;
+var maxXPPanzer = 0;
+var maxSteps = 0;
 var testFlagDirParam = true;
 var panzer = {
     being: true,
@@ -51,9 +58,9 @@ var panzer = {
     speed:10,
     maxHP: 1000,
     HP: 1000,
-    maxEnergy: 5000,
-    energy: 5000,
-    countPatrons:10,
+    maxEnergy: 500,
+    energy: 500,
+    countPatrons:startPatrons,
     damage:10,// урон
     accuracy:75,// точность 
     speedAttack: 70,
@@ -547,6 +554,7 @@ var Bonuses = function () {
                 if (checkCollision(this.bonusArr[i],panzerArr[j]))
                 {
                     this.bonusArr[i].being = false;
+                    panzerArr[j].XP += 20;
                     switch (this.bonusArr[i].type)
                     {
                         case 0: panzerArr[j].countPatrons += 10; break;
@@ -604,8 +612,8 @@ var Genes = function () {
 
     this.typeDataValue = [
         {
-            name: 'numMin0Max7',
-            valueMin: 0,
+            name: 'numMin1Max7',
+            valueMin: 1,
             valueMax: 7,
         },
         {
@@ -668,7 +676,7 @@ var Genes = function () {
             name: 'exec',
             valueArr:[
                 {
-                    type:['numMin0Max7',]
+                    type:['numMin1Max7',]
                 },
             ],
             countValue: null,
@@ -1059,9 +1067,12 @@ var wallArr = [];
 window.addEventListener('load', function () {
     preload();
     create();
+    this.setTimeout(function(){
+        update();
+    },1)
     setInterval(function () {
        
-        update();
+        
         drawAll();
     },16);
 });
@@ -1102,7 +1113,7 @@ function create()
     canvas = document.getElementById("canvas");
     context = canvas.getContext("2d");
     initKeyboardAndMouse(['KeyA', 'KeyW', 'KeyS', 'KeyD',"NumpadSubtract",'NumpadAdd','Minus','Equal',
-                           'Space','Digit1','Digit2','Digit3','Digit4','Digit5','KeyQ','KeyH',]);
+                           'Space','Digit1','Digit2','Digit3','Digit4','Digit5','KeyQ','KeyH','KeyP',]);
     srand(2);
     updateSize();
 /*    canvas.setAttribute('width',canvasWidth);
@@ -1169,14 +1180,17 @@ function create()
     {
         let panzerOne = JSON.parse(JSON.stringify(panzer));
         let flag = false;
-        do {
+      /*  do {
             let x = randomInteger(0,Math.trunc(map.width / wall.width)-1);
             let y = randomInteger(0,Math.trunc(map.height / wall.width)-1);;
             panzerOne.x = x * wall.width;
             panzerOne.y = y * wall.width;
  
         } while (collisionPanzerWall(panzerOne) == true ||
-            collisionPanzerToPanzer(panzerOne,null) == true);
+            collisionPanzerToPanzer(panzerOne,null) == true);*/
+        let XY= calcNewCoordPanzer();
+        panzerOne.x = XY.x;
+        panzerOne.y = XY.y;
         let index = i % quantityColor;
         panzerOne.color = colorArr[index];
         panzerOne.team = i % quantityTeam;
@@ -1219,6 +1233,19 @@ function create()
     }
     //alert(55);
     //console.log(wallArr);
+}
+function calcNewCoordPanzer()
+{
+    let panzerOne = JSON.parse(JSON.stringify(panzer));
+    do {
+            let x = randomInteger(0,Math.trunc(map.width / wall.width)-1);
+            let y = randomInteger(0,Math.trunc(map.height / wall.width)-1);;
+            panzerOne.x = x * wall.width;
+            panzerOne.y = y * wall.width;
+ 
+    } while (collisionPanzerWall(panzerOne) == true ||
+        collisionPanzerToPanzer(panzerOne,null) == true);
+    return {x:panzerOne.x, y: panzerOne.y};
 }
 window.onresize = function()
 {
@@ -1276,78 +1303,82 @@ function drawAll()
     context.fillStyle = 'black';
     context.fillRect(0, 0, screenWidth,screenHeight/*canvas.width, canvas.height*/);
     //context.save();
-    for (let i = 0; i < panzerArr.length;i++)
+    if (visible==true)
     {
-        if (panzerArr[i].being==true)
-        {
-            if (numSelectPanzer==i)
-            {
-                drawPanzer(panzerArr[i],true);
 
-            }
-            else
+        for (let i = 0; i < panzerArr.length;i++)
+        {
+            if (panzerArr[i].being==true)
             {
-                drawPanzer(panzerArr[i]);
+                if (numSelectPanzer==i)
+                {
+                    drawPanzer(panzerArr[i],true);
+
+                }
+                else
+                {
+                    drawPanzer(panzerArr[i]);
+                }
             }
         }
-    }
-    for (let i = 0; i < quantityWall;i++)
-    {
-        drawWall(wallArr[i]);
-    }
-    bonuses.draw();
-    bullets.drawBullets(context);
-    burst.draw();
-    context.fillStyle = 'red';
-    context.fillText(Math.trunc(mouseX)+' '+Math.trunc(mouseY), 1,20);
-    for (let i = 0; i < panzerArr.length;i++)
-    {
-        if (panzerArr[i].being==true)
+        for (let i = 0; i < quantityWall;i++)
         {
-
-            let width = size;
-            if (panzerArr[i].HP>0)
+            drawWall(wallArr[i]);
+        }
+        bonuses.draw();
+        bullets.drawBullets(context);
+        burst.draw();
+        context.fillStyle = 'red';
+        context.fillText(Math.trunc(mouseX)+' '+Math.trunc(mouseY), 1,20);
+        for (let i = 0; i < panzerArr.length;i++)
+        {
+            if (panzerArr[i].being==true)
             {
 
-                context.fillStyle = "green";
-                context.fillRect(panzerArr[i].x*scale-camera.x-2*scale,
-                        panzerArr[i].y*scale-camera.y-5*scale,
-                        width*panzerArr[i].HP/panzerArr[i].maxHP*scale,4*scale);
-            }
-            if (panzerArr[i].energy>0)
-            {
-                context.fillStyle = "blue";
-                context.fillRect(panzerArr[i].x*scale-camera.x-2*scale,
-                            panzerArr[i].y*scale-camera.y-10*scale,
-                            width*panzerArr[i].energy/panzerArr[i].maxEnergy*scale,4*scale);
-            }
-        }
-    }
-  /*  if (flagScaling==true)
-    {
-        context.scale(0.5,0.5);
-        flagScaling = false;
+                let width = size;
+                if (panzerArr[i].HP>0)
+                {
 
-    }*/
-   // context.restore();
-    for (let i = 0; i < panzerArr.length;i++)
-    {
-        if (visibleEnemy(numSelectPanzer,i)==true &&
-            panzerArr[numSelectPanzer].team!=panzerArr[i].team)
-        {
-            context.beginPath();
-            context.strokeStyle = "green";
-            context.lineWidth = 1;
-            context.moveTo(panzerArr[numSelectPanzer].centerX*scale-camera.x,
-                            panzerArr[numSelectPanzer].centerY*scale-camera.y);
-            context.lineTo(panzerArr[i].centerX*scale-camera.x,panzerArr[i].centerY*scale-camera.y);
-            context.stroke(); 
+                    context.fillStyle = "green";
+                    context.fillRect(panzerArr[i].x*scale-camera.x-2*scale,
+                            panzerArr[i].y*scale-camera.y-5*scale,
+                            width*panzerArr[i].HP/panzerArr[i].maxHP*scale,4*scale);
+                }
+                if (panzerArr[i].energy>0)
+                {
+                    context.fillStyle = "blue";
+                    context.fillRect(panzerArr[i].x*scale-camera.x-2*scale,
+                                panzerArr[i].y*scale-camera.y-10*scale,
+                                width*panzerArr[i].energy/panzerArr[i].maxEnergy*scale,4*scale);
+                }
+            }
         }
-    }
+      /*  if (flagScaling==true)
+        {
+            context.scale(0.5,0.5);
+            flagScaling = false;
+
+        }*/
+       // context.restore();
+        for (let i = 0; i < panzerArr.length;i++)
+        {
+            if (visibleEnemy(numSelectPanzer,i)==true &&
+                panzerArr[numSelectPanzer].team!=panzerArr[i].team)
+            {
+                context.beginPath();
+                context.strokeStyle = "green";
+                context.lineWidth = 1;
+                context.moveTo(panzerArr[numSelectPanzer].centerX*scale-camera.x,
+                                panzerArr[numSelectPanzer].centerY*scale-camera.y);
+                context.lineTo(panzerArr[i].centerX*scale-camera.x,panzerArr[i].centerY*scale-camera.y);
+                context.stroke(); 
+            }
+        }
     
-    for (let i = 0; i < helperArr.length;i++)
-    {
-        helperArr[i].draw();
+        for (let i = 0; i < helperArr.length;i++)
+        {
+            helperArr[i].draw();
+        }
     }
   /*  context.fillStyle = 'green';
     context.fillRect(helper.x-camera.x,helper.y-camera.y,helper.width,helper.height);*/
@@ -1356,44 +1387,62 @@ function drawAll()
     context.fillRect(1,camera.height,screenWidth,heightSide);
 
 
-    /* DRAW GENES*/
-    genes.draw(context);
-    genes.draw(context,1120,genes.commandArrTwo);
+    if (visible==true)
+    {
+
+        /* DRAW GENES*/
+        genes.draw(context);
+    }
+    //genes.draw(context,1120,genes.commandArrTwo);
 
 
-    context.font='25px Arial';
-    context.fillStyle = 'red';
-    context.fillText("Steps: "+countLoopIter, 1,620);
-
-    context.font='25px Arial';
+    context.font='20px Arial';
+    addY = 23;
+    startY = 620;
     context.fillStyle = 'blue';
-    context.fillText("numGenesPanzer: "+numGenesPanzer, 1,650);
-   
-    context.font='25px Arial';
-    context.fillStyle = 'green';
-    context.fillText("Sensor: "+sensorValue, 1,690);
+    context.fillText("numGeneration: "+numGeneration, 1,startY);
 
+    context.fillStyle = 'red';
+    context.fillText("Steps: "+countLoopIter, 1,startY+addY);
+    
+    context.fillStyle = 'red';
+    context.fillText("MAX Steps: "+maxSteps, 1,startY+addY*2);
 
+    //context.font='25px Arial';
+    context.fillStyle = 'blue';
+    context.fillText("numGenesPanzer: "+numGenesPanzer, 1,startY+addY*3);
    
-    context.font='25px Arial';
+    //context.font='25px Arial';
     context.fillStyle = 'green';
-    context.fillText("Sensor: "+sensorValue, 1,690);
+    context.fillText("Living panzer: "+countBeingPanzer, 1,startY+addY*4);
+
+    //context.font='25px Arial';
+    context.fillStyle = 'blue';
+    context.fillText("max XP: "+maxXPPanzer, 1,startY+addY*5);
+   
+    /*context.font='25px Arial';
+    context.fillStyle = 'green';
+    context.fillText("Sensor: "+sensorValue, 1,690);*/
     /*рисуем уровень и параметры танка*/
-    let numP = 0;
-    if (modeGame=='HERO')
+    if (visible==true)
     {
-        numP = numSelectPanzer;
+
+        let numP = 0;
+        if (modeGame=='HERO')
+        {
+            numP = numSelectPanzer;
+        }
+        else if (modeGame=='GOD')
+        {
+            numP = numGenesPanzer;
+        }
+        levelNextXP = progresslevel[panzerArr[numP].level];
+        context.font='25px Arial';
+        context.fillStyle = 'white';
+        context.fillText("Level: "+panzerArr[numP].level+" "
+                    +"Evolutionary meat: "+panzerArr[numP].XP+" from: "+levelNextXP, 300,630);
+drawParamPanzer(300, 650, numP);
     }
-    else if (modeGame=='GOD')
-    {
-        numP = numGenesPanzer;
-    }
-    levelNextXP = progresslevel[panzerArr[numP].level];
-    context.font='25px Arial';
-    context.fillStyle = 'white';
-    context.fillText("Level: "+panzerArr[numP].level+" "
-                +"Evolutionary meat: "+panzerArr[numP].XP+" from: "+levelNextXP, 300,630);
-    drawParamPanzer(300,650,numP)
    
     
 }
@@ -1659,20 +1708,30 @@ function addParamPanzer(panzer,plus=true,numParam=null)
 function update() 
 {
   
-    let countBeingPanzer = 0;
 
     if (modeGame == 'GOD') cameraMove();
     if (keyUpDuration('KeyH',100)==true)
     {
         modeGame = modeGame == 'GOD' ? 'HERO' : "GOD";
     }
-    let flagChangeGenes=false;
+    if (keyUpDuration('KeyP',100)==true)
+    {
+        visible = !visible;
+    }
     if (keyUpDuration('Space',100)/*checkPressKey('Space')==true*/)
     {
         panzerArr[numGenesPanzer].genes.commandArr = JSON.parse(JSON.stringify(genes.commandArrTwo));
         //genes.commandArrTwo = panzerArr[numGenesPanzer].genes.commandArr;
-        genes.commandArrTwo = genes.changeGenes(genes.commandArrTwo,10,100);
-        flagChangeGenes = true;
+        genes.commandArrTwo = genes.changeGenes(genes.commandArrTwo, 10, 100);
+    }
+    if (keyUpDuration('NumpadSubtract',100)==true)
+    {
+        scale*=0.75;
+    }
+    if (keyUpDuration('NumpadAdd',100)==true)
+    {
+        scale*=1.333;
+       // alert(scale);
     }
 /*    if (checkPressKey('KeyQ')==true || keyUpDuration('KeyQ',100)==true)
     {
@@ -1690,55 +1749,73 @@ function update()
             addParamPanzer(panzerArr[numSelectPanzer], testFlagDirParam, i - 1);
         }
     }*/
-    for (let i = 0; i < panzerArr.length;i++)
+    for (let k = 0; k < (visible == true ? 1 : 20);k++)
     {
-        if (panzerArr[i].being==true)
+
+        countBeingPanzer = 0;   
+
+        for (let i = 0; i < panzerArr.length;i++)
         {
-
-            if (numSelectPanzer==i && modeGame=='HERO')
+            if (panzerArr[i].being==true)
             {
-                controlHumanPanzer(panzerArr[i],i);
-            }
-            else
-            {
-                completeGenesPanzer(panzerArr[i],i);
-                
-            }
-
-            let barrierArr=updateBarrierVisible();
-            updateSensorPanzer(panzerArr[i],i,barrierArr)
-            let collision = [false, false, false];
-            panzerArr[i].state.collis = 0;
-            collision[0] = collisionPanzerWall(panzerArr[i]);
-            collision[1] = collisionRectangleMap(panzerArr[i]);
-            collision[2] = collisionPanzerToPanzer(panzerArr[i],i)
-            for (let j = 0; j < collision.length; j++)
-            {
-                if (collision[j] == true)
+                countBeingPanzer++;
+                if (numSelectPanzer==i && modeGame=='HERO')
                 {
-                    panzerArr[i].state.collis = 1;
-                    break;
+                    controlHumanPanzer(panzerArr[i],i);
                 }
-            }
+                else
+                {
+                    completeGenesPanzer(panzerArr[i],i);
+                
+                }
 
-            updateStatePanzer(panzerArr[i]);
-            if (modeGame=='HERO')
+                let barrierArr=updateBarrierVisible();
+                updateSensorPanzer(panzerArr[i],i,barrierArr)
+                let collision = [false, false, false];
+                panzerArr[i].state.collis = 0;
+                collision[0] = collisionPanzerWall(panzerArr[i]);
+                collision[1] = collisionRectangleMap(panzerArr[i]);
+                collision[2] = collisionPanzerToPanzer(panzerArr[i],i)
+                for (let j = 0; j < collision.length; j++)
+                {
+                    if (collision[j] == true)
+                    {
+                        panzerArr[i].state.collis = 1;
+                        break;
+                    }
+                }
+
+                updateStatePanzer(panzerArr[i]);
+                if (modeGame=='HERO')
+                {
+
+                    cameraFocusXY(panzerArr[numSelectPanzer].x, 
+                                panzerArr[numSelectPanzer].y, map);
+                }
+
+            }
+        
+        }
+
+        killedPanzers();
+        bullets.update();
+        bullets.collisionBullet(wallArr);
+        burst.update();
+        bonuses.update();
+
+        nextGeneration();
+
+        maxXPPanzer = 0;
+        for (let i = 0; i < panzerArr.length;i++)
+        {
+            if (panzerArr[i].being==true && maxXPPanzer<=panzerArr[i].XP)
             {
 
-                cameraFocusXY(panzerArr[numSelectPanzer].x, 
-                            panzerArr[numSelectPanzer].y, map);
+                maxXPPanzer = panzerArr[i].XP;
             }
-            countBeingPanzer++;
-
         }
-        
+        if (countBeingPanzer>0)countLoopIter++;
     }
-
-    killedPanzers();
-    bullets.update();
-    bullets.collisionBullet(wallArr);
-    burst.update();
-    bonuses.update();
     if (modeGame=='GOD' )
     {
         let flag = false;
@@ -1778,18 +1855,9 @@ function update()
         
 
     }
-    if (keyUpDuration('NumpadSubtract',100)==true)
-    {
-        scale*=0.75;
-    }
-    if (keyUpDuration('NumpadAdd',100)==true)
-    {
-        scale*=1.333;
-       // alert(scale);
-    }
+   
     
-    
-    if (countBeingPanzer>0)countLoopIter++;
+        
     /*
      ВНИМАНИЕ НЕОБХОДИМО В PANZERARR2 ДОБАВЛЯТЬ ТОЛЬКО ТАНКИ С BEING TRUE !!!
     */
@@ -1812,6 +1880,7 @@ function update()
         helperArr[i].update();
 
     }
+    setTimeout(update, visible == true ? 16 : 1);
     //console.log(mouseX, mouseY);
 }
 function updateStatePanzer(panzer)
@@ -1834,13 +1903,117 @@ function killedPanzers()
 {
     for (let i = 0; i < panzerArr.length;i++)
     {
-        if (panzerArr[i].HP<=0 || panzerArr[i].energy<=0)
+        if (panzerArr[i].HP<=0 || panzerArr[i].energy<=0 && panzerArr[i].being==true)
         {
             panzerArr[i].being = false;
         }
     }
 }
+function nextGeneration()
+{
+    let maxXP = 0;
+    let numPanzMaxXp = null;
+    let AlivePanzer = 8;
+    let panzerArr2 = JSON.parse(JSON.stringify(panzerArr));
+    if (countBeingPanzer<=AlivePanzer)
+    {
+        for (let i = 0; i < panzerArr2.length;i++)
+        {
+            if (panzerArr2[i].being==true)
+            {
+                
+                if (maxXP<=panzerArr2[i].XP)
+                {
+                    maxXP = panzerArr2[i].XP;
+                    numPanzMaxXp = i;
+                }
+            }
+        }
+        let flagNull = false;
+        if (numPanzMaxXp==null)
+        {
+            flagNull = true;
+            for (let i = 0; i < panzerArr2.length;i++)
+            {
+                
+                if (maxXP<=panzerArr2[i].XP)
+                {
+                    numPanzMaxXp = i;
+                    maxXP = panzerArr2[i].XP;
+                }
+            }
+        }
+        //console.log('NUMMAXXP',numPanzMaxXp);
+        let panzerArrTemp = [];
+        if (flagNull == false)
+        {
 
+            for (let i = 0; i < panzerArr2.length;i++)
+            {
+                if (panzerArr2[i].being==true)
+                {
+                    panzerArrTemp.push(panzerArr2[i]);
+                }
+            }
+        }
+        else
+        {
+            for (let i = 0; i < AlivePanzer;i++)
+            {
+                //if (panzerArr2[i].being==true)
+                {
+                    panzerArrTemp.push(panzerArr2[i]);
+                }
+            }
+
+        }
+        /*for (let i = 0; i < panzerArrTemp.length;i++)
+        {
+            panzerArrTemp[i].being = true;
+            panzerArrTemp[i].energy = panzerArrTemp[i].maxEnergy;
+            panzerArrTemp[i].HP=panzerArrTemp[i].maxHP;
+        }*/
+        //console.log('panzerArrTEMP 1',panzerArrTemp);
+        for (let i = panzerArrTemp.length; i < AlivePanzer;i++)
+        {
+            console.log('One panzer',panzerArr2[numPanzMaxXp]);
+            panzerArrTemp.push(panzerArr2[numPanzMaxXp]);
+        }
+       // console.log('panzerArrTEMP 2',panzerArrTemp);
+        panzerArr = [];
+        //console.log('panzerArr empty',panzerArr);
+        for (let i = 0; i < quantityPanzer;i++)
+        {
+            let panzerOne = JSON.parse(JSON.stringify(panzerArrTemp[i % AlivePanzer]));
+         
+      
+            panzerOne.being = true;
+            let XY= calcNewCoordPanzer();
+              
+            panzerOne.x = XY.x;
+            panzerOne.y = XY.y;
+      
+            if (i%AlivePanzer>AlivePanzer*0.66)
+            {
+
+                panzerOne.genes.commandArr = genes.changeGenes(panzerOne.genes.commandArr,3,5);
+            }
+            panzerOne.selectCommand = 0;
+            panzerOne.team = i % 4;
+            panzerOne.color = colorArr[panzerOne.team];
+            panzerOne.countPatrons = startPatrons;
+            panzerOne.energy = panzerOne.maxEnergy;
+            panzerOne.HP=panzerOne.maxHP;
+            updateStatePanzer(panzerOne);
+            panzerArr.push(panzerOne);
+        }
+        console.log('panzerArr',panzerArr)
+        //alert(545);
+        numGeneration++;
+        if (maxSteps < countLoopIter) maxSteps = countLoopIter;
+        countLoopIter = 0;
+    }
+}
 function updateBarrierVisible()// обновить список барьеров
 {
     let panzerArr2 = [];
@@ -2100,18 +2273,20 @@ function completeGenesPanzer(panzer,numP)// исполнение генов та
             if (value==5)
             {
                 panzer.angleTower += 10;
+                panzer.energy -= minusEnergy/2;
             }
 
             if (value==6)
             {
                 panzer.angleTower -= 10;
+                panzer.energy -= minusEnergy/2;
             }
 
             if (panzer.countAttack<panzer.countAttack+10) 
             {
                 panzer.countAttack++;
             }
-            if (value==0)
+            if (value==7)
             {
                 if (panzer.countAttack>=panzer.timeAttack && panzer.countPatrons>0)
                 {
@@ -2120,6 +2295,7 @@ function completeGenesPanzer(panzer,numP)// исполнение генов та
                     panzer.countAttack = 0;
                     panzer.countPatrons--;
                 }
+                panzer.energy -= minusEnergy / 1.8;
             }
             select++;// переход на следуюшию команду
 /*            select %= new Genes().quantityCommand; 
@@ -2321,7 +2497,7 @@ function completeGenesPanzer(panzer,numP)// исполнение генов та
 
         select %= new Genes().quantityCommand; 
         panzer.selectCommand = select;
-        panzer.energy -= minusEnergyMove / 40;;
+        panzer.energy -= minusEnergyMove / 6;;
     }  
     select %= new Genes().quantityCommand; 
     panzer.selectCommand = select;
@@ -2456,7 +2632,7 @@ function collisionPanzerToPanzer(panzer,num)// проверка столкнов
 {
     for (let i = 0; i < panzerArr.length;i++)
     {
-        if (num!=i && panzerArr[i].being==true)
+        if (num!==i && panzerArr[i].being==true)
         {
             //console.log(panzerArr[i]);
             if (panzer.x+panzer.width>panzerArr[i].x &&
