@@ -44,6 +44,7 @@ var maxLevel = 50;
 var maxXPPanzer = 0;
 var maxSteps = 0;
 var testFlagDirParam = true;
+var colorArrRGB = [];
 var panzer = {
     being: true,
     x:1,
@@ -51,7 +52,12 @@ var panzer = {
     width: 35,
     height: 35,
     sizeTower: 7,
-    color: 'white',
+    colorStart: {
+        R: 255,
+        G: 255,
+        B: 255,
+    },
+    color: "white",
     angleBody: 270,
     angleTower: 270,
     dir:0,
@@ -66,6 +72,8 @@ var panzer = {
     speedAttack: 70,
     timeAttack: 30,
     countAttack: 0,
+    age: 1,
+    maxAge: 200,
     towerX:null,
     towerY: null,
     towerX1: null,
@@ -1149,7 +1157,9 @@ function create()
             B=255;
         }
         let color = 'rgb(' + R + ',' + G + ',' + B + ')';
+        let colorRGB = { R: R, G: G, B: B };
         colorArr.push(color);
+        colorArrRGB.push(colorRGB);
     }
     console.log(colorArr);
     // инициализируем progressLevel
@@ -1192,7 +1202,8 @@ function create()
         panzerOne.x = XY.x;
         panzerOne.y = XY.y;
         let index = i % quantityColor;
-        panzerOne.color = colorArr[index];
+        panzerOne.color= colorArr[index];
+        panzer.colorStart = colorArrRGB[index];
         panzerOne.team = i % quantityTeam;
         panzerOne.maxHP = panzerOne.HP = randomInteger(10, 20) * maxParam.maxHP/100;
         panzerOne.speed =randomInteger(10, 20) * maxParam.speed/100;
@@ -1898,6 +1909,17 @@ function updateStatePanzer(panzer)
     panzer.state.HP = Math.trunc(panzer.HP/panzer.maxHP*100);
     panzer.state.energy= Math.trunc(panzer.energy/panzer.maxEnergy*100);
     panzer.state.patrons = panzer.countPatrons;
+    if (panzer.age<panzer.maxAge) panzer.age++;
+    panzer.color = changeColor(panzer.colorStart, panzer.age, panzer.maxAge);
+
+}
+function changeColor(color,time,maxTime)
+{
+    let mult = 0.75;
+    let R = color.R-(color.R *(time / maxTime)*mult);
+    let G = color.G-(color.G *(time / maxTime)*mult);
+    let B = color.B-(color.B *(time / maxTime)*mult);
+    return  'rgb(' + R + ',' + G + ',' + B + ')';
 }
 function killedPanzers()
 {
@@ -2000,7 +2022,8 @@ function nextGeneration()
             }
             panzerOne.selectCommand = 0;
             panzerOne.team = i % 4;
-            panzerOne.color = colorArr[panzerOne.team];
+            panzerOne.color =colorArr[panzerOne.team];
+            panzerOne.colorStart = colorArrRGB[panzerOne.team];
             panzerOne.countPatrons = startPatrons;
             panzerOne.energy = panzerOne.maxEnergy;
             panzerOne.HP=panzerOne.maxHP;

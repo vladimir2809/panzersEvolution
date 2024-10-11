@@ -1,0 +1,36 @@
+body {
+}
+form{
+    width: 400px;
+    border:1px solid black;
+}
+form>h1{
+    text-align:center;
+}
+form div {
+    margin-bottom: 10px;
+}
+form label{
+    display: inline-block; 
+    min-width:  200px;
+    margin-left: 10px;
+}
+form div #agressionMutate{
+    position: relative;
+    top: 4px;
+    /*margin-top: px;*/
+}
+form div #valueAgression{
+    width: 30px;
+}
+form div #quantityEnergy{
+    width: 50px;
+}
+#setButton{
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+#setButton button{
+    margin: 0px 20px;
+}
