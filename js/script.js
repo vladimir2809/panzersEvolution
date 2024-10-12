@@ -42,6 +42,7 @@ var helperArr = [];
 var progresslevel = [];
 var maxLevel = 50;
 var maxXPPanzer = 0;
+var numPanzMaxXP = null;
 var maxSteps = 0;
 var testFlagDirParam = true;
 var colorArrRGB = [];
@@ -1321,6 +1322,14 @@ function drawAll()
         {
             if (panzerArr[i].being==true)
             {
+                if (numPanzMaxXP==i)
+                {
+                    context.fillStyle = 'white';
+                    context.fillRect(panzerArr[i].x*scale-3,panzerArr[i].y*scale-3,
+                        panzerArr[i].width*scale+6,panzerArr[i].height*scale+6)
+                    //drawPanzer(panzerArr[i],true);
+                }
+              
                 if (numSelectPanzer==i)
                 {
                     drawPanzer(panzerArr[i],true);
@@ -1330,6 +1339,7 @@ function drawAll()
                 {
                     drawPanzer(panzerArr[i]);
                 }
+                
             }
         }
         for (let i = 0; i < quantityWall;i++)
@@ -1452,7 +1462,7 @@ function drawAll()
         context.fillStyle = 'white';
         context.fillText("Level: "+panzerArr[numP].level+" "
                     +"Evolutionary meat: "+panzerArr[numP].XP+" from: "+levelNextXP, 300,630);
-drawParamPanzer(300, 650, numP);
+        drawParamPanzer(300, 650, numP);
     }
    
     
@@ -1823,6 +1833,7 @@ function update()
             {
 
                 maxXPPanzer = panzerArr[i].XP;
+                numPanzMaxXP = i;
             }
         }
         if (countBeingPanzer>0)countLoopIter++;
@@ -1925,13 +1936,146 @@ function killedPanzers()
 {
     for (let i = 0; i < panzerArr.length;i++)
     {
-        if (panzerArr[i].HP<=0 || panzerArr[i].energy<=0 && panzerArr[i].being==true)
+        if (
+            (panzerArr[i].HP<=0 || panzerArr[i].energy<=0 || 
+            panzerArr[i].age>=panzerArr[i].maxAge
+            ) 
+            && panzerArr[i].being==true)
         {
             panzerArr[i].being = false;
         }
     }
 }
 function nextGeneration()
+{
+    let maxXPPanzerArr = [];
+    let countPanzersInTeam = [];
+    function calcPanzerInTeam()
+    {
+        resultArr = [];
+        for (let i = 0; i < quantityTeam;i++)
+        {
+            let count = 0;
+            for (let j = 0; j < panzerArr.length;j++)
+            {
+                if (panzerArr[j].being==true)
+                {
+                    if (panzerArr[j].team==i)
+                    {
+                        count++;
+                    }
+                }
+            }
+            resultArr.push(count);
+            
+
+        }
+        return resultArr;
+    }
+    function calcPanzerArrMaxXP(numTeam,isBeing=true,isTeam=true)
+    {
+        let XPPanzerArr = [];
+        let maxXP = 0;
+        let num = null;
+        let result = {};
+        for (let i = 0; i < panzerArr.length;i++)
+        {
+            if (panzerArr[i].being==true || isBeing==false)
+            if (panzerArr[i].team==numTeam || isTeam==false)
+            { 
+                if (maxXP<=panzerArr[i].XP)
+                {
+                    maxXP = panzerArr[i].XP;
+                    num = i;
+                }
+            }
+        }
+        if (num!=null)
+        {
+            return panzerArr[num];
+            
+        }
+        else
+        {
+            return null;
+        }
+
+       
+    }
+    if (countLoopIter % 100==0)
+    {
+        
+        countPanzersInTeam = calcPanzerInTeam();
+        console.log('panzerInTeam',countPanzersInTeam);
+
+        if (countPanzersInTeam.length>0)
+        {
+            for (let i = 0; i < quantityTeam;i++)
+            {
+                if (countPanzersInTeam[i]>0)
+                {
+                    let panzerOne = calcPanzerArrMaxXP(i);
+                    maxXPPanzerArr.push(panzerOne);
+                }
+                else
+                {
+                    let panzerOne = calcPanzerArrMaxXP(i,false);
+                    maxXPPanzerArr.push(panzerOne);
+                }
+            }
+        }
+        else
+        {
+            for (let i = 0; i < quantityTeam;i++)
+            {
+                let panzerOne = calcPanzerArrMaxXP(i,false,false);
+                maxXPPanzerArr.push(panzerOne);
+            }
+        }
+        console.log('MAXXPPANZER',maxXPPanzerArr);
+        for (let i = 0; i < maxXPPanzerArr.length;i++)
+        {
+            let inTeam = countPanzersInTeam[i];
+            while (inTeam<quantityPanzer/quantityTeam)
+            {
+                for (let j = 0; j < panzerArr.length;j++)
+                {
+                    let panzerOne = JSON.parse(JSON.stringify(maxXPPanzerArr[i]));
+                    panzerOne.being = true;
+                    let XY= calcNewCoordPanzer();
+              
+                    panzerOne.x = XY.x;
+                    panzerOne.y = XY.y;
+      
+                    if (randomInteger(0,100)>66)
+                    {
+
+                        panzerOne.genes.commandArr = genes.changeGenes(panzerOne.genes.commandArr,3,5);
+                    }
+                    panzerOne.selectCommand = 0;
+                    panzerOne.team = i;
+                    panzerOne.color =colorArr[panzerOne.team];
+                    panzerOne.colorStart = colorArrRGB[panzerOne.team];
+                    panzerOne.countPatrons = startPatrons;
+                    panzerOne.XP=0;
+                    panzerOne.energy = panzerOne.maxEnergy;
+                    panzerOne.HP=panzerOne.maxHP;
+                    panzerOne.maxAge = randomInteger(150,250);
+                    panzerOne.age = 0;
+                    updateStatePanzer(panzerOne);
+                    panzerArr.push(panzerOne);  
+                    inTeam++;
+                    break;
+                }
+            }
+
+            
+        }
+        countLoopIter = 0;
+        numGeneration++;
+    }
+}
+/*function nextGenerationOld()
 {
     let maxXP = 0;
     let numPanzMaxXp = null;
@@ -1989,12 +2133,12 @@ function nextGeneration()
             }
 
         }
-        /*for (let i = 0; i < panzerArrTemp.length;i++)
+        *//*for (let i = 0; i < panzerArrTemp.length;i++)
         {
             panzerArrTemp[i].being = true;
             panzerArrTemp[i].energy = panzerArrTemp[i].maxEnergy;
             panzerArrTemp[i].HP=panzerArrTemp[i].maxHP;
-        }*/
+        }*//*
         //console.log('panzerArrTEMP 1',panzerArrTemp);
         for (let i = panzerArrTemp.length; i < AlivePanzer;i++)
         {
@@ -2021,10 +2165,11 @@ function nextGeneration()
                 panzerOne.genes.commandArr = genes.changeGenes(panzerOne.genes.commandArr,3,5);
             }
             panzerOne.selectCommand = 0;
-            panzerOne.team = i % 4;
+            panzerOne.team = i % quantityTeam;
             panzerOne.color =colorArr[panzerOne.team];
             panzerOne.colorStart = colorArrRGB[panzerOne.team];
             panzerOne.countPatrons = startPatrons;
+            panzerOne.XP=0;
             panzerOne.energy = panzerOne.maxEnergy;
             panzerOne.HP=panzerOne.maxHP;
             updateStatePanzer(panzerOne);
@@ -2036,7 +2181,7 @@ function nextGeneration()
         if (maxSteps < countLoopIter) maxSteps = countLoopIter;
         countLoopIter = 0;
     }
-}
+}*/
 function updateBarrierVisible()// обновить список барьеров
 {
     let panzerArr2 = [];
@@ -2520,7 +2665,7 @@ function completeGenesPanzer(panzer,numP)// исполнение генов та
 
         select %= new Genes().quantityCommand; 
         panzer.selectCommand = select;
-        panzer.energy -= minusEnergyMove / 6;;
+        panzer.energy -= minusEnergyMove / 10;;
     }  
     select %= new Genes().quantityCommand; 
     panzer.selectCommand = select;
