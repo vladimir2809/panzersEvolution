@@ -37,6 +37,8 @@ var nameImageArr = ['energy','patrons','HP'];
 var countLoadImage=0;// количество загруженных картинок
 var countLoopIter = 0;
 var numGeneration = 1;
+var scoreGeneration = 0;
+var maxScore = 0;
 var sensorValue = 0;
 var helperArr = [];
 var progresslevel = [];
@@ -359,6 +361,7 @@ var Bullets = function () {
                 if (panzerArr[index].team!=panzerArr[this.bulletArr[num].master].team)
                 {
                     panzerArr[this.bulletArr[num].master].XP += valueXP*3;
+                    scoreGeneration+= valueXP*3;
                     if (panzerArr[this.bulletArr[num].master].XP >=
                         progresslevel[panzerArr[this.bulletArr[num].master].level] 
                         && (panzerArr[this.bulletArr[num].master].level<maxLevel)
@@ -374,6 +377,16 @@ var Bullets = function () {
                     if (panzerArr[this.bulletArr[num].master].XP >= valueXP*11)
                     {
                         panzerArr[this.bulletArr[num].master].XP -= valueXP*11;
+                        if (scoreGeneration>=valueXP*11)
+                        {
+
+                            scoreGeneration -= valueXP*11;
+                        }
+                        else
+                        {
+                            scoreGeneration = 0;
+
+                        }
 
                     }
                     else
@@ -564,6 +577,7 @@ var Bonuses = function () {
                 {
                     this.bonusArr[i].being = false;
                     panzerArr[j].XP += 20;
+                    scoreGeneration += 20;
                     switch (this.bonusArr[i].type)
                     {
                         case 0: panzerArr[j].countPatrons += 10; break;
@@ -1426,12 +1440,12 @@ function drawAll()
     context.fillStyle = 'red';
     context.fillText("Steps: "+countLoopIter, 1,startY+addY);
     
-    context.fillStyle = 'red';
-    context.fillText("MAX Steps: "+maxSteps, 1,startY+addY*2);
+    context.fillStyle = 'blue';
+    context.fillText("score Generation: "+scoreGeneration, 1,startY+addY*2);
 
     //context.font='25px Arial';
     context.fillStyle = 'blue';
-    context.fillText("numGenesPanzer: "+numGenesPanzer, 1,startY+addY*3);
+    context.fillText("max Score generation: "+maxScore, 1,startY+addY*3);
    
     //context.font='25px Arial';
     context.fillStyle = 'green';
@@ -1748,6 +1762,8 @@ function update()
     if (keyUpDuration('NumpadSubtract',100)==true)
     {
         scale*=0.75;
+        camera.x = 1;
+        camera.y = 1;
     }
     if (keyUpDuration('NumpadAdd',100)==true)
     {
@@ -2039,6 +2055,7 @@ function nextGeneration()
             while (inTeam<quantityPanzer/quantityTeam)
             {
                 for (let j = 0; j < panzerArr.length;j++)
+                if (panzerArr[j].being==false)
                 {
                     let panzerOne = JSON.parse(JSON.stringify(maxXPPanzerArr[i]));
                     panzerOne.being = true;
@@ -2063,7 +2080,8 @@ function nextGeneration()
                     panzerOne.maxAge = randomInteger(150,250);
                     panzerOne.age = 0;
                     updateStatePanzer(panzerOne);
-                    panzerArr.push(panzerOne);  
+                    panzerArr[j]=JSON.parse(JSON.stringify(panzerOne));
+                   // panzerArr.push(panzerOne);  
                     inTeam++;
                     break;
                 }
@@ -2073,6 +2091,8 @@ function nextGeneration()
         }
         countLoopIter = 0;
         numGeneration++;
+        if (maxScore < scoreGeneration) maxScore = scoreGeneration;
+        scoreGeneration = 0;
     }
 }
 /*function nextGenerationOld()

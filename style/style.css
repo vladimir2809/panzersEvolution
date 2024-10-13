@@ -25,8 +25,11 @@ form div #agressionMutate{
 form div #valueAgression{
     width: 30px;
 }
-form div #quantityEnergy{
-    width: 50px;
+form div input[type=text]{
+    width: 63px;
+}
+form div select{
+    width: 71px;
 }
 #setButton{
     display: flex;

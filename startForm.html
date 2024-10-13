@@ -12,7 +12,7 @@
             <label for="startForm">Размер карты:</label>
             <select id="sizeMap">
                 <option value="1">1 x 1</option>
-                <option value="2">2 x 2</option>
+                <option value="2" selected>2 x 2</option>
                 <option value="3">3 x 3</option>
                 <option value="4">4 x 4</option>
             </select>
@@ -21,7 +21,7 @@
             <label for="quantityPanzer">Количество танков:</label>
             <select id="quantityPanzer">
                 <option value="16">16</option>
-                <option value="32">32</option>
+                <option value="32" selected>32</option>
                 <option value="64">64</option>
             </select>
         </div>
@@ -35,12 +35,24 @@
             <input type="text" id="quantityEnergy" value="500" min='500' max="5000">
         </div>
         <div>
+            <label for="quantityResources">Количество ресурсов:</label>
+            <select id="quantityResources">
+                <option value="small">Мало</option>
+                <option value="medium" selected>Средне</option>
+                <option value="many">Много</option>
+            </select>
+        </div>
+        <div>
             <label for="maxAge">Максимальный возраст:</label>
             <input type="text" id="maxAge" value="200" min='500' max="5000">
         </div>
         <div>
             <label for="timeGeneration">Время поколения:</label>
             <input type="text" id="timeGeneration" value="100" min='500' max="5000">
+        </div>
+        <div>
+            <label for="numRandom">Число случайности:</label>
+            <input type="text" id="numRandom" value="1">
         </div>
         <div id="setButton">
             <button id="clear">Сброс</button>
