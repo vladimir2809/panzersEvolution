@@ -3,13 +3,15 @@
 <head>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="style/style.css">
+    <script src="js/option.js"></script>
+    <!--<script src="js/script.js"></script>-->
     <title>Panzers Evolution</title>
 </head>
 <body>
     <form id="startForm">
         <h1> Эволюция танков</h1>
         <div>
-            <label for="startForm">Размер карты:</label>
+            <label for="sizeMap">Размер карты:</label>
             <select id="sizeMap">
                 <option value="1">1 x 1</option>
                 <option value="2" selected>2 x 2</option>
@@ -61,5 +63,38 @@
             <button id="start">Старт</button>
         </div>
     </form>
+    <script>
+        window.addEventListener("load", function () {
+            var clearButton = document.getElementById('clear');
+            clearButton.addEventListener("click", clearStartWin,event)
+            var range = document.getElementById('agressionMutate');
+            var inputAgres = document.getElementById('valueAgression');
+            range.addEventListener('change', function () {
+                inputAgres.value = range.value;
+            });
+
+        });
+        function clearStartWin(event) {
+            event.preventDefault();
+            domElemsArr = [];
+            for (attr in opt)
+            {
+                domElem = document.getElementById(attr);
+                domElemsArr.push(domElem);
+            }
+            console.log(domElemsArr[0].id);
+            for (let i = 0; i < domElemsArr.length;i++)
+            {
+                for (attr in opt)
+                {
+                    if (attr==domElemsArr[i].id)
+                    {
+                        //domElemsArr[i].setAttribute('value', opt[attr]);
+                        domElemsArr[i].value = opt[attr];
+                    }
+                }
+            }
+        }
+    </script>
 </body>
 </html>

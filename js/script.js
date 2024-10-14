@@ -19,7 +19,7 @@ var quantityColor = 4;//64
 var quantityBullet = 150;
 var quantityBurst = 500;
 var quantityTeam = 4;
-var quantityPanzer = 64;
+var quantityPanzer =32// 64;
 var quantityWall = 64;
 var quantityBonus = 150;
 
@@ -1086,11 +1086,11 @@ var Genes = function () {
 var colorArr = [];
 var panzerArr = [];
 var wallArr = [];
-
+var timeout = null;
 window.addEventListener('load', function () {
     preload();
     create();
-    this.setTimeout(function(){
+    setTimeout(function(){
         update();
     },1)
     setInterval(function () {
@@ -1099,13 +1099,28 @@ window.addEventListener('load', function () {
         drawAll();
     },16);
 });
+/*window.addEventListener("blur", function () {//здесь твой код})
+    timeout = setTimeout(function () {
+        update();
+    }, 1)
+});
+window.addEventListener("focus", function () {//здесь код};
+    clearTimeout(timeout);
+});*/
+
+/*window.addEventListener('blur', function () {
+    this.setTimeout(function(){
+        update();
+    },1)
+});*/
 function loadImageArr()// загрузить массив изображений
 {
     // заполняем массив изображений именами
     for (let value of nameImageArr  )
     {
         let image=new Image();
-        image.src="img/"+value+".png";        imageArr.set(value,image);
+        image.src="img/"+value+".png";   
+        imageArr.set(value,image);
     }
     // проверяем загружены ли все изображения
     for (let pair of imageArr  )
@@ -1127,6 +1142,7 @@ function loadImageArr()// загрузить массив изображений
              }
      }  
 }
+
 function preload() 
 {
     loadImageArr();
@@ -1137,6 +1153,7 @@ function create()
     context = canvas.getContext("2d");
     initKeyboardAndMouse(['KeyA', 'KeyW', 'KeyS', 'KeyD',"NumpadSubtract",'NumpadAdd','Minus','Equal',
                            'Space','Digit1','Digit2','Digit3','Digit4','Digit5','KeyQ','KeyH','KeyP',]);
+ 
     srand(2);
     updateSize();
 /*    canvas.setAttribute('width',canvasWidth);
@@ -1220,12 +1237,13 @@ function create()
         panzerOne.color= colorArr[index];
         panzer.colorStart = colorArrRGB[index];
         panzerOne.team = i % quantityTeam;
-        panzerOne.maxHP = panzerOne.HP = randomInteger(10, 20) * maxParam.maxHP/100;
+        calcStartParamPanzer(panzerOne);
+/*        panzerOne.maxHP = panzerOne.HP = randomInteger(10, 20) * maxParam.maxHP/100;
         panzerOne.speed =randomInteger(10, 20) * maxParam.speed/100;
         panzerOne.damage = randomInteger(10, 20) * maxParam.damage/100
         panzerOne.accuracy = randomInteger(60, 80) * maxParam.accuracy/100;
         panzerOne.speedAttack = randomInteger(10, 20) * maxParam.speedAttack/100;
-        panzerOne.timeAttack = maxParam.speedAttack - panzerOne.speedAttack;
+        panzerOne.timeAttack = maxParam.speedAttack - panzerOne.speedAttack;*/
         gs = new Genes();
         gs.initCommandRand();
         panzerOne.genes = {
@@ -1259,6 +1277,15 @@ function create()
     }
     //alert(55);
     //console.log(wallArr);
+}
+function calcStartParamPanzer(panzerOne)
+{
+    panzerOne.maxHP = panzerOne.HP = randomInteger(10, 20) * maxParam.maxHP/100;
+    panzerOne.speed =randomInteger(10, 20) * maxParam.speed/100;
+    panzerOne.damage = randomInteger(10, 20) * maxParam.damage/100
+    panzerOne.accuracy = randomInteger(60, 80) * maxParam.accuracy/100;
+    panzerOne.speedAttack = randomInteger(10, 20) * maxParam.speedAttack/100;
+    panzerOne.timeAttack = maxParam.speedAttack - panzerOne.speedAttack;
 }
 function calcNewCoordPanzer()
 {
@@ -1474,8 +1501,9 @@ function drawAll()
         levelNextXP = progresslevel[panzerArr[numP].level];
         context.font='25px Arial';
         context.fillStyle = 'white';
-        context.fillText("Level: "+panzerArr[numP].level+" "
-                    +"Evolutionary meat: "+panzerArr[numP].XP+" from: "+levelNextXP, 300,630);
+        /*context.fillText("Level: "+panzerArr[numP].level+" "
+                    +"Evolutionary meat: "+panzerArr[numP].XP+" from: "+levelNextXP, 300,630);*/
+        context.fillText("Level: "+panzerArr[numP].level, 300,630);
         drawParamPanzer(300, 650, numP);
     }
    
@@ -1742,7 +1770,7 @@ function addParamPanzer(panzer,plus=true,numParam=null)
 }
 function update() 
 {
-  
+     window.document.hasFocus = function() {return true;}
 
     if (modeGame == 'GOD') cameraMove();
     if (keyUpDuration('KeyH',100)==true)
@@ -1958,6 +1986,8 @@ function killedPanzers()
             ) 
             && panzerArr[i].being==true)
         {
+            panzerArr[i].level = 1;
+            calcStartParamPanzer(panzerArr[i]);
             panzerArr[i].being = false;
         }
     }
@@ -1966,6 +1996,7 @@ function nextGeneration()
 {
     let maxXPPanzerArr = [];
     let countPanzersInTeam = [];
+    let numMaxXPPanzerArr = [];
     function calcPanzerInTeam()
     {
         resultArr = [];
@@ -2008,7 +2039,7 @@ function nextGeneration()
         }
         if (num!=null)
         {
-            return panzerArr[num];
+            return {panzer:panzerArr[num],num:num};
             
         }
         else
@@ -2030,12 +2061,17 @@ function nextGeneration()
             {
                 if (countPanzersInTeam[i]>0)
                 {
-                    let panzerOne = calcPanzerArrMaxXP(i);
+                    let data=calcPanzerArrMaxXP(i)
+                    let panzerOne = data.panzer;
+                    numMaxXPPanzerArr.push(data.num)
                     maxXPPanzerArr.push(panzerOne);
                 }
                 else
                 {
-                    let panzerOne = calcPanzerArrMaxXP(i,false);
+                    let data=calcPanzerArrMaxXP(i,false)
+                    let panzerOne = data.panzer;
+                    numMaxXPPanzerArr.push(data.num);
+                    //let panzerOne = calcPanzerArrMaxXP(i,false);
                     maxXPPanzerArr.push(panzerOne);
                 }
             }
@@ -2044,46 +2080,75 @@ function nextGeneration()
         {
             for (let i = 0; i < quantityTeam;i++)
             {
-                let panzerOne = calcPanzerArrMaxXP(i,false,false);
+                let data=calcPanzerArrMaxXP(i,false,false)
+                let panzerOne = data.panzer;
+                numMaxXPPanzerArr.push(data.num);
+                //let panzerOne = calcPanzerArrMaxXP(i,false,false);
                 maxXPPanzerArr.push(panzerOne);
             }
         }
+        for (let i = 0; i < panzerArr.length;i++)
+        {
+            if (checkElemArr(numMaxXPPanzerArr,i)==true)
+            {
+                if (panzerArr[i].being==true)
+                {
+                    panzerArr[i].energy *= 0.66;
+                }
+            }
+            else     
+            {
+                if (panzerArr[i].being==true)
+                {
+                    panzerArr[i].level++;
+                    addParamPanzer(i, true);
+                }
+            }
+        }
         console.log('MAXXPPANZER',maxXPPanzerArr);
+        count = 0;
         for (let i = 0; i < maxXPPanzerArr.length;i++)
         {
             let inTeam = countPanzersInTeam[i];
             while (inTeam<quantityPanzer/quantityTeam)
             {
+     
                 for (let j = 0; j < panzerArr.length;j++)
-                if (panzerArr[j].being==false)
                 {
-                    let panzerOne = JSON.parse(JSON.stringify(maxXPPanzerArr[i]));
-                    panzerOne.being = true;
-                    let XY= calcNewCoordPanzer();
-              
-                    panzerOne.x = XY.x;
-                    panzerOne.y = XY.y;
-      
-                    if (randomInteger(0,100)>66)
+                    if (panzerArr[j].being==false)
                     {
+                        
+                        let panzerOne = JSON.parse(JSON.stringify(maxXPPanzerArr[i]));
+                        panzerOne.being = true;
+                        let XY= calcNewCoordPanzer();
+              
+                        panzerOne.x = XY.x;
+                        panzerOne.y = XY.y;
+      
+                    //    if (randomInteger(0,100)>66)
+                        //if (inTeam>(quantityPanzer/quantityTeam)*0.66)
+                        if (count % 3 == 0)
+                        {
 
-                        panzerOne.genes.commandArr = genes.changeGenes(panzerOne.genes.commandArr,3,5);
+                            panzerOne.genes.commandArr = genes.changeGenes(panzerOne.genes.commandArr,3,5);
+                        }
+                        panzerOne.selectCommand = 0;
+                        panzerOne.team = i;
+                        panzerOne.color =colorArr[panzerOne.team];
+                        panzerOne.colorStart = colorArrRGB[panzerOne.team];
+                        panzerOne.countPatrons = startPatrons;
+                        panzerOne.XP=0;
+                        panzerOne.energy = panzerOne.maxEnergy;
+                        panzerOne.HP=panzerOne.maxHP;
+                        panzerOne.maxAge = randomInteger(150,250);
+                        panzerOne.age = 0;
+                        updateStatePanzer(panzerOne);
+                        panzerArr[j]=JSON.parse(JSON.stringify(panzerOne));
+                       // panzerArr.push(panzerOne);  
+                        inTeam++;
+                        count++;
+                        break;
                     }
-                    panzerOne.selectCommand = 0;
-                    panzerOne.team = i;
-                    panzerOne.color =colorArr[panzerOne.team];
-                    panzerOne.colorStart = colorArrRGB[panzerOne.team];
-                    panzerOne.countPatrons = startPatrons;
-                    panzerOne.XP=0;
-                    panzerOne.energy = panzerOne.maxEnergy;
-                    panzerOne.HP=panzerOne.maxHP;
-                    panzerOne.maxAge = randomInteger(150,250);
-                    panzerOne.age = 0;
-                    updateStatePanzer(panzerOne);
-                    panzerArr[j]=JSON.parse(JSON.stringify(panzerOne));
-                   // panzerArr.push(panzerOne);  
-                    inTeam++;
-                    break;
                 }
             }
 
