@@ -29,12 +29,13 @@
         </div>
         <div>
             <label for="agressionMutate">Агрессивность мутаций: </label>
-            <input type="text" id="valueAgression" value="20">
-            <input type="range" id="agressionMutate" min="1" max="100" value="20">
+            <input type="text" id="valueAgression" value="20" disabled maxlength="3">
+            <input type="range" id="agressionMutate" min="1" max="100" value="20" >
         </div>
         <div>
             <label for="quantityEnergy">Количество энергии:</label>
-            <input type="text" id="quantityEnergy" value="500" min='500' max="5000">
+            <input type="text" id="quantityEnergy" value="500" min='500' max="5000" maxlength="6">
+            <span>минимум: </span>
         </div>
         <div>
             <label for="quantityResources">Количество ресурсов:</label>
@@ -46,15 +47,18 @@
         </div>
         <div>
             <label for="maxAge">Максимальный возраст:</label>
-            <input type="text" id="maxAge" value="200" min='500' max="5000">
+            <input type="text" id="maxAge" value="200" min='500' max="5000" maxlength="6">
+            <span>минимум: </span>
         </div>
         <div>
             <label for="timeGeneration">Время поколения:</label>
-            <input type="text" id="timeGeneration" value="100" min='500' max="5000">
+            <input type="text" id="timeGeneration" value="100" min='500' max="5000" maxlength="6">
+            <span>минимум: </span>
         </div>
         <div>
             <label for="numRandom">Число случайности:</label>
-            <input type="text" id="numRandom" value="1">
+            <input type="text" id="numRandom" value="1" maxlength="6">
+            <span>минимум: </span>
         </div>
         <div id="setButton">
             <button id="clear">Сброс</button>
@@ -63,15 +67,91 @@
             <button id="start">Старт</button>
         </div>
     </form>
-    <script>
+    <script> 
+        valueInputArr=[
+            {num:2, value: 300},
+            {num:3, value: 200},
+            {num:4, value: 100},
+            {num: 5, value: 1 },
+
+        ]
         window.addEventListener("load", function () {
             var clearButton = document.getElementById('clear');
             clearButton.addEventListener("click", clearStartWin,event)
             var range = document.getElementById('agressionMutate');
             var inputAgres = document.getElementById('valueAgression');
-            range.addEventListener('change', function () {
+            var inputArr = document.querySelectorAll('input');
+            /*range.addEventListener('change', function () {
                 inputAgres.value = range.value;
-            });
+            });*/
+            setInterval(function () {
+                inputAgres.value = range.value;
+            },16);
+            //inputArr[2].nextElementSibling.innerHTML = 10000;
+            for (let i = 0; i < inputArr.length; i++) 
+            {
+                for (let j = 0; j < valueInputArr.length; j++) 
+                {
+                       if (i == valueInputArr[j].num)
+                       {
+                           inputArr[i].nextElementSibling.innerHTML += valueInputArr[j].value;             
+                       }
+                }            
+            }
+            setInterval(function () {
+                for (let i = 0; i < inputArr.length; i++)
+                {
+                    for (let j = 0; j < valueInputArr.length;j++)
+                    {
+                    
+                        if (i==valueInputArr[j].num)
+                        if (Number(inputArr[i].value) < valueInputArr[j].value) 
+                        {
+                            inputArr[i].style.color = "red";
+                        } 
+                        else
+                        {
+                            inputArr[i].style.color = "black";
+                        }
+                    }
+                    inputArr[i].onblur = function () {
+                        //if (inputArr[i].value=='')
+                        {
+                            for (let j = 0; j < valueInputArr.length; j++)
+                            {
+
+                                if (i == valueInputArr[j].num)
+                                if (Number(inputArr[i].value) < valueInputArr[j].value ||
+                                    inputArr[i].value == '')
+                                {
+                                    inputArr[i].value = valueInputArr[j].value;
+                                }
+                            }
+
+                        }
+                    }
+                }
+            }, 16);
+            //setInterval(function () {
+            ;
+            for (let i = 0; i < inputArr.length;i++)
+            {
+
+                //inputArr[i].oninput = e => 
+                inputArr[i].oninput = function (e) {
+                    //if (inputArr[i].value == '0') inputArr[i].value = '';
+                        e.target.value = e.target.value.replace(/^0/, ''); 
+                        e.target.value = e.target.value.replace(/\D/g, '');
+                        if (inputArr[i].value.match("^0+")) {
+                         inputArr[i].value = '';
+                        }
+                  
+                }
+              
+                
+            }
+            //}, 1);
+
 
         });
         function clearStartWin(event) {
