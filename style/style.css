@@ -1,6 +1,7 @@
 body {
 }
 form{
+    display: block;
     width: 500px;
     margin: auto  auto auto auto;
     border:1px solid black;
@@ -38,4 +39,9 @@ form div select{
 }
 #setButton button{
     margin: 0px 20px;
+}
+
+/*CANVAS*/
+canvas{
+    display:none;
 }

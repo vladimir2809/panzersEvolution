@@ -1087,17 +1087,138 @@ var colorArr = [];
 var panzerArr = [];
 var wallArr = [];
 var timeout = null;
-window.addEventListener('load', function () {
-    preload();
-    create();
-    setTimeout(function(){
-        update();
-    },1)
+function updateFormStart()
+{
+    valueInputArr=[
+        {num:2, value: 300},
+        {num:3, value: 200},
+        {num:4, value: 100},
+        {num: 5, value: 1 },
+
+    ]
+  
+    var clearButton = document.getElementById('clear');
+    clearButton.addEventListener("click", clearStartWin,event)
+    var range = document.getElementById('agressionMutate');
+    var inputAgres = document.getElementById('valueAgression');
+    var inputArr = document.querySelectorAll('input');
+    /*range.addEventListener('change', function () {
+        inputAgres.value = range.value;
+    });*/
     setInterval(function () {
+        inputAgres.value = range.value;
+    },16);
+    //inputArr[2].nextElementSibling.innerHTML = 10000;
+    for (let i = 0; i < inputArr.length; i++) 
+    {
+        for (let j = 0; j < valueInputArr.length; j++) 
+        {
+                if (i == valueInputArr[j].num)
+                {
+                    inputArr[i].nextElementSibling.innerHTML += valueInputArr[j].value;             
+                }
+        }            
+    }
+    setInterval(function () {
+        for (let i = 0; i < inputArr.length; i++)
+        {
+            for (let j = 0; j < valueInputArr.length;j++)
+            {
+                    
+                if (i==valueInputArr[j].num)
+                if (Number(inputArr[i].value) < valueInputArr[j].value) 
+                {
+                    inputArr[i].style.color = "red";
+                } 
+                else
+                {
+                    inputArr[i].style.color = "black";
+                }
+            }
+                
+        }
+    }, 16);
+    for (let i = 0; i < inputArr.length; i++) 
+    {
+        inputArr[i].onblur = function (){
+                           
+            for (let j = 0; j < valueInputArr.length; j++) 
+            {
+
+                if (i == valueInputArr[j].num)
+                if (Number(inputArr[i].value) < valueInputArr[j].value ||
+                    inputArr[i].value == '') 
+                {
+                    inputArr[i].value = valueInputArr[j].value;
+                }
+            }
+
+        }
+    }
+    //setInterval(function () {
+    ;
+    for (let i = 0; i < inputArr.length;i++)
+    {
+
+        //inputArr[i].oninput = e => 
+        inputArr[i].oninput = function (e) {
+            //if (inputArr[i].value == '0') inputArr[i].value = '';
+                e.target.value = e.target.value.replace(/^0/, ''); 
+                e.target.value = e.target.value.replace(/\D/g, '');
+                if (inputArr[i].value.match("^0+")) {
+                    inputArr[i].value = '';
+                }
+                  
+        }
+              
+                
+    }
+        //}, 1);
+
+
+  
+    function clearStartWin(event) {
+        event.preventDefault();
+        domElemsArr = [];
+        for (attr in opt)
+        {
+            domElem = document.getElementById(attr);
+            domElemsArr.push(domElem);
+        }
+        console.log(domElemsArr[0].id);
+        for (let i = 0; i < domElemsArr.length;i++)
+        {
+            for (attr in opt)
+            {
+                if (attr==domElemsArr[i].id)
+                {
+                    //domElemsArr[i].setAttribute('value', opt[attr]);
+                    domElemsArr[i].value = opt[attr];
+                }
+            }
+        }
+    }
+}
+window.addEventListener('load', function () {
+    updateFormStart();
+    var btnStart = document.getElementById('start');
+    var startForm=document.getElementById('startForm');
+    btnStart.onclick=function(event)
+    {
+        event.preventDefault();
+        preload();
+        create();
+        startForm.style.display = 'none';
+        canvas.style.display = 'block';
+        setTimeout(function(){
+            update();
+        },1)
+        setInterval(function () {
        
         
-        drawAll();
-    },16);
+            drawAll();
+        },16);
+    }
 });
 /*window.addEventListener("blur", function () {//здесь твой код})
     timeout = setTimeout(function () {
