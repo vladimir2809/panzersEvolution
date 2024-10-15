@@ -17,9 +17,9 @@ var  heightSide = screenHeight - camera.height;*/
 var size = 40;
 var quantityColor = 4;//64
 var quantityBullet = 150;
-var quantityBurst = 500;
+var quantityBurst = 150;
 var quantityTeam = 4;
-var quantityPanzer =32// 64;
+var quantityPanzer = 32// 64;
 var quantityWall = 64;
 var quantityBonus = 150;
 
@@ -31,12 +31,14 @@ var numGenesPanzer = 0;
 var distAttack = 300;
 var minusEnergyMove = 2;
 var startPatrons = 10;
+var agressionMutate = 20;
 var countBeingPanzer = 0;
 var imageArr=new Map();// массив картинок
 var nameImageArr = ['energy','patrons','HP'];
 var countLoadImage=0;// количество загруженных картинок
 var countLoopIter = 0;
 var numGeneration = 1;
+var timeGeneration = 100;
 var scoreGeneration = 0;
 var maxScore = 0;
 var sensorValue = 0;
@@ -119,6 +121,16 @@ var panzer = {
         MC4: 0,*/
     }
 }
+var memoryNull={
+    M1: 0,
+    M2: 0,
+    M3: 0,
+    M4: 0,
+    M5: 0,
+    M6: 0,
+    M7: 0,
+    M8: 0,
+}
 var teamMemory = {
     MC1: 0,
     MC2: 0,
@@ -155,8 +167,8 @@ var wall = {
 var map = {
     x:0,
     y:0,
-    width: 800*4,
-    height: 600*4,
+    width: 800*2,
+    height: 600*2,
 }
 var camera = {
     x:0,
@@ -497,9 +509,9 @@ var Bonuses = function () {
         height: 30,
         type: 0,//null
         time: 0,
-        maxTime: 100,
+        //maxTime: 100,
     }
-    this.timeNew = 5//250;
+    this.timeNew = 3//250;
     this.countTimeNew = 0;
     this.bonusArr = [];
     this.init = function ()
@@ -571,8 +583,10 @@ var Bonuses = function () {
         }
         for (let i = 0; i < this.bonusArr.length;i++)
         {
+            if (this.bonusArr[i].being==true)
             for (let j = 0; j < panzerArr.length;j++)
             {
+                if (panzerArr[j].being==true)
                 if (checkCollision(this.bonusArr[i],panzerArr[j]))
                 {
                     this.bonusArr[i].being = false;
@@ -1199,6 +1213,29 @@ function updateFormStart()
         }
     }
 }
+
+function setOption()
+{
+    //event.preventDefault();
+    domElemsArr = [];
+    for (attr in opt)
+    {
+        domElem = document.getElementById(attr);
+        domElemsArr.push(domElem);
+    }
+    console.log(domElemsArr[0].id);
+    for (let i = 0; i < domElemsArr.length;i++)
+    {
+        for (attr in opt)
+        {
+            if (attr==domElemsArr[i].id)
+            {
+                //domElemsArr[i].setAttribute('value', opt[attr]);
+                opt[attr]=domElemsArr[i].value;
+            }
+        }
+    }
+}
 window.addEventListener('load', function () {
     updateFormStart();
     var btnStart = document.getElementById('start');
@@ -1206,6 +1243,27 @@ window.addEventListener('load', function () {
     btnStart.onclick=function(event)
     {
         event.preventDefault();
+        setOption();
+        map.width = 800 * 2 * opt.sizeMap;
+        map.height = 600 * 2 * opt.sizeMap;
+        quantityPanzer = opt.quantityPanzer;
+        agressionMutate = opt.valueAgression;
+        timeGeneration = opt.timeGeneration;
+        
+        panzer.maxAge = opt.maxAge;
+        panzer.energy = panzer.maxEnergy = opt.quantityEnergy;
+        let freeCell = (map.width / size) * (map.height / size)  - quantityPanzer;
+        quantityWall = freeCell * 0.066;
+        freeCell -= quantityWall;
+        switch (opt.quantityResources)
+        {
+            case 'small': quantityBonus = freeCell * 0.03; break;
+            case 'medium': quantityBonus = freeCell * 0.05; break;
+            case 'many': quantityBonus = freeCell * 0.1; break;
+        }
+        
+        srand(opt.numRandom);
+        console.log(opt.numRandom);
         preload();
         create();
         startForm.style.display = 'none';
@@ -1275,7 +1333,7 @@ function create()
     initKeyboardAndMouse(['KeyA', 'KeyW', 'KeyS', 'KeyD',"NumpadSubtract",'NumpadAdd','Minus','Equal',
                            'Space','Digit1','Digit2','Digit3','Digit4','Digit5','KeyQ','KeyH','KeyP',]);
  
-    srand(2);
+  /*  srand(2);*/
     updateSize();
 /*    canvas.setAttribute('width',canvasWidth);
     canvas.setAttribute('height',canvasHeight);
@@ -1375,6 +1433,7 @@ function create()
         panzerArr.push(panzerOne);
         updateStatePanzer(panzerArr[i]);
     }
+
     console.log(panzerArr);
     bullets = new Bullets();
     bullets.init();
@@ -1382,6 +1441,10 @@ function create()
     burst.init();
     bonuses = new Bonuses();
     bonuses.init();
+    for (let i = 0; i < quantityBonus;i++)
+    {
+        bonuses.new();
+    }
     genes = new Genes();
     genes.initCommandRand();
     helperArr[0] = new Helper(100,100,'green');
@@ -2170,7 +2233,7 @@ function nextGeneration()
 
        
     }
-    if (countLoopIter % 100==0)
+    if (countLoopIter % timeGeneration==0 || countBeingPanzer==0)
     {
         
         countPanzersInTeam = calcPanzerInTeam();
@@ -2250,8 +2313,13 @@ function nextGeneration()
                         //if (inTeam>(quantityPanzer/quantityTeam)*0.66)
                         if (count % 3 == 0)
                         {
-
-                            panzerOne.genes.commandArr = genes.changeGenes(panzerOne.genes.commandArr,3,5);
+                            let value1 = agressionMutate / 10;
+                            var value2 = (agressionMutate % 20)/4;
+                            value1 = Math.ceil(value1);
+                            value2 = Math.ceil(value2);
+                            panzerOne.genes.commandArr = genes.changeGenes(panzerOne.genes.commandArr,
+                                                                    value1,value2);
+                            panzerOne.memory=JSON.parse(JSON.stringify(memoryNull));
                         }
                         panzerOne.selectCommand = 0;
                         panzerOne.team = i;
@@ -2871,7 +2939,7 @@ function completeGenesPanzer(panzer,numP)// исполнение генов та
 
         select %= new Genes().quantityCommand; 
         panzer.selectCommand = select;
-        panzer.energy -= minusEnergyMove / 10;;
+        panzer.energy -= minusEnergyMove / 16;;
     }  
     select %= new Genes().quantityCommand; 
     panzer.selectCommand = select;
