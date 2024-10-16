@@ -22,7 +22,7 @@ var quantityTeam = 4;
 var quantityPanzer = 32// 64;
 var quantityWall = 64;
 var quantityBonus = 150;
-
+var numRand = 1;
 
 var modeGame = 'GOD';// 'GOD', 'HERO', 'EGREGOR'
 var visible = true;
@@ -1240,10 +1240,26 @@ window.addEventListener('load', function () {
     updateFormStart();
     var btnStart = document.getElementById('start');
     var startForm=document.getElementById('startForm');
+    var btnContinue=document.getElementById('continue');
+    if (checkDataStorage()==false)
+    {
+        btnContinue.setAttribute('disabled','')
+    }
+    btnContinue.onclick = function (event) {
+        event.preventDefault();
+        //calcParamSimulation();
+        startSimulation(true);
+        //flagStartStorage = true;
+    }
+   
+
     btnStart.onclick=function(event)
     {
         event.preventDefault();
-        setOption();
+        removeDataStorage();
+        calcParamSimulation();
+        startSimulation();
+        /*setOption();
         map.width = 800 * 2 * opt.sizeMap;
         map.height = 600 * 2 * opt.sizeMap;
         quantityPanzer = opt.quantityPanzer;
@@ -1268,6 +1284,11 @@ window.addEventListener('load', function () {
         create();
         startForm.style.display = 'none';
         canvas.style.display = 'block';
+        if (flagStartStorage==true)
+        {
+            readDataStorage();
+            flagStartStorage = false;
+        }
         setTimeout(function(){
             update();
         },1)
@@ -1275,9 +1296,80 @@ window.addEventListener('load', function () {
        
         
             drawAll();
-        },16);
+        },16);*/
     }
 });
+function startSimulation(startStorage=false)
+{
+
+    /*setOption();
+    map.width = 800 * 2 * opt.sizeMap;
+    map.height = 600 * 2 * opt.sizeMap;
+    quantityPanzer = opt.quantityPanzer;
+    agressionMutate = opt.valueAgression;
+    timeGeneration = opt.timeGeneration;
+        
+    panzer.maxAge = opt.maxAge;
+    panzer.energy = panzer.maxEnergy = opt.quantityEnergy;
+    let freeCell = (map.width / size) * (map.height / size)  - quantityPanzer;
+    quantityWall = freeCell * 0.066;
+    freeCell -= quantityWall;
+    switch (opt.quantityResources)
+    {
+        case 'small': quantityBonus = freeCell * 0.03; break;
+        case 'medium': quantityBonus = freeCell * 0.05; break;
+        case 'many': quantityBonus = freeCell * 0.1; break;
+    }
+        
+    srand(opt.numRandom);
+    console.log(opt.numRandom);*/
+    preload();
+    create();
+    startForm.style.display = 'none';
+    canvas.style.display = 'block';
+    //countLoopIter=1;
+    if (startStorage==true)
+    {
+       // setTimeout(function () {
+
+        readDataStorage();
+        calcParamSimulation(false);
+     //   }, 10);
+        
+    }
+    setTimeout(function(){
+        countLoopIter=1;
+        update();
+    },1)
+    setInterval(function () {
+       
+        drawAll();
+    },16);
+}
+function calcParamSimulation(dataForm = true)
+{
+    if (dataForm==true) setOption();
+    map.width = 800 * 2 * opt.sizeMap;
+    map.height = 600 * 2 * opt.sizeMap;
+    quantityPanzer = opt.quantityPanzer;
+    agressionMutate = opt.valueAgression;
+    timeGeneration = opt.timeGeneration;
+        
+    panzer.maxAge = opt.maxAge;
+    panzer.energy = panzer.maxEnergy = opt.quantityEnergy;
+    let freeCell = (map.width / size) * (map.height / size)  - quantityPanzer;
+    quantityWall = freeCell * 0.066;
+    freeCell -= quantityWall;
+    switch (opt.quantityResources)
+    {
+        case 'small': quantityBonus = freeCell * 0.03; break;
+        case 'medium': quantityBonus = freeCell * 0.05; break;
+        case 'many': quantityBonus = freeCell * 0.1; break;
+    }
+        
+    if (dataForm == true) srand(opt.numRandom); else srand(numRand);
+    console.log(opt.numRandom);
+}
 /*window.addEventListener("blur", function () {//здесь твой код})
     timeout = setTimeout(function () {
         update();
@@ -1952,6 +2044,97 @@ function addParamPanzer(panzer,plus=true,numParam=null)
     } while (flag2==true && numParam==null)
 
 }
+function readDataStorage()
+{
+    let data = localStorage.getItem('evolutionPanzers');
+    data = JSON.parse(data); 
+    if (typeof(data.numRand)=='number')
+    {
+        numRand=data.numRand;
+    }
+    if (typeof(data.numGeneration)=='number')
+    {
+        numGeneration=data.numGeneration;
+    }
+    if (typeof(data.countLoopIter)=='number')
+    {
+        countLoopIter=data.countLoopIter;
+    }
+    if (Array.isArray(data.wallArr)==true)
+    {
+        while (wallArr.length>0)
+        {
+           wallArr.splice(0,1);
+        }
+        for (let i = 0; i <data.wallArr.length;i++)
+        {
+            wallArr.push(data.wallArr[i]);
+        }
+    }
+    if (Array.isArray(data.bonusArr)==true)
+    {
+        while (bonuses.bonusArr.length>0)
+        {
+            bonuses.bonusArr.splice(0,1);
+        }
+        for (let i = 0; i <data.bonusArr.length;i++)
+        {
+            bonuses.bonusArr.push(data.bonusArr[i]);
+        }
+    }
+    if (Array.isArray(data.panzerArr)==true)
+    {
+        while (panzerArr.length>0)
+        {
+           panzerArr.splice(0,1);
+        }
+        for (let i = 0; i <data.panzerArr.length;i++)
+        {
+            panzerArr.push(data.panzerArr[i]);
+        }
+    }
+    if (Array.isArray(data.teamMemory)==true)
+    {
+        while (teamMemory.length>0)
+        {
+           teamMemory.splice(0,1);
+        }
+        for (let i = 0; i <data.teamMemory.length;i++)
+        {
+            teamMemory.push(data.teamMemory[i]);
+        }
+    }
+}
+function saveDataStorage()
+{
+    localStorage.setItem('evolutionPanzers', JSON.stringify({
+            numRand: numRand,
+            numGeneration: numGeneration,
+            countLoopIter: countLoopIter,
+            option: opt,
+            wallArr: wallArr,
+            bonusArr: bonuses.bonusArr,
+            panzerArr: panzerArr,
+            teamMemory: teamMemory,
+        })
+    );
+}
+function checkDataStorage()// проверить есть ли данные в локальном хранилише
+{
+    if (localStorage.getItem('evolutionPanzers')==null ||
+        localStorage.getItem('evolutionPanzers')==undefined)
+    {
+        return false
+    }
+    else
+    {
+        return true;
+    }
+}
+function removeDataStorage()// удалить данные из локальнного хранилиша
+{
+    localStorage.removeItem('evolutionPanzers');
+}
 function update() 
 {
      window.document.hasFocus = function() {return true;}
@@ -2233,7 +2416,7 @@ function nextGeneration()
 
        
     }
-    if (countLoopIter % timeGeneration==0 || countBeingPanzer==0)
+    if ((countLoopIter % timeGeneration==0 || countBeingPanzer==0))
     {
         
         countPanzersInTeam = calcPanzerInTeam();
@@ -2347,6 +2530,8 @@ function nextGeneration()
         numGeneration++;
         if (maxScore < scoreGeneration) maxScore = scoreGeneration;
         scoreGeneration = 0;
+        numRand = new Date().setTime();
+        saveDataStorage();
     }
 }
 /*function nextGenerationOld()
