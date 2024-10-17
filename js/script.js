@@ -50,6 +50,7 @@ var numPanzMaxXP = null;
 var maxSteps = 0;
 var testFlagDirParam = true;
 var colorArrRGB = [];
+var dataSave = null;
 var panzer = {
     being: true,
     x:1,
@@ -514,13 +515,18 @@ var Bonuses = function () {
     this.timeNew = 3//250;
     this.countTimeNew = 0;
     this.bonusArr = [];
+    this.setQuantity=function(value)
+    {
+        this.quantityBonus = value;
+
+    }
     this.init = function ()
     {
         for (let i = 0; i < this.quantityBonus;i++)
         {
             let bonusOne = JSON.parse(JSON.stringify(this.bonus));
             this.bonusArr.push(bonusOne);
-            if (i<this.quantityBonusMin)  this.new();
+           // if (i<this.quantityBonusMin)  this.new();
         }
         console.log('bonuses', this.bonusArr);
     }
@@ -546,7 +552,7 @@ var Bonuses = function () {
     }
     this.new = function ()
     {
-        for (let i = 0; i < this.quantityBonus;i++)
+        for (let i = 0; i < this.bonusArr.length /*this.quantityBonus*/; i++)
         {
             if (this.bonusArr[i].being==false)
             {
@@ -861,7 +867,7 @@ var Genes = function () {
         {
             this.commandArr.push(this.initCommandOne());
         }
-        console.log(this.commandArr);
+       // console.log(this.commandArr);
         if (this.commandArrTwo.length<=0)
         {
             this.commandArrTwo = JSON.parse(JSON.stringify(this.commandArr));
@@ -871,13 +877,13 @@ var Genes = function () {
     {
       
         let commandArr2 = JSON.parse(JSON.stringify(genes));
-        console.log('GENES', genes);
+       // console.log('GENES', genes);
         for (let i = 0; i < count1;i++)
         {
             let R = randomInteger(0, this.quantityCommand-1);
             let newCommand = this.initCommandOne();
             commandArr2[R] = newCommand;
-            console.log('R=' + R);
+           // console.log('R=' + R);
         }
         genes = JSON.parse(JSON.stringify(commandArr2));
         for (let i = 0; i < count2;i++)
@@ -1324,6 +1330,8 @@ function startSimulation(startStorage=false)
     srand(opt.numRandom);
     console.log(opt.numRandom);*/
     preload();
+    bonuses = new Bonuses();
+    
     create();
     startForm.style.display = 'none';
     canvas.style.display = 'block';
@@ -1337,8 +1345,21 @@ function startSimulation(startStorage=false)
      //   }, 10);
         
     }
+    bonuses.setQuantity(quantityBonus);
+    console.log("bonuses",bonuses);
     setTimeout(function(){
         countLoopIter=1;
+        
+        if (startStorage==false)
+        {
+            
+            bonuses.init();
+
+            for (let i = 0; i < quantityBonus;i++)
+            {
+                bonuses.new();
+            }
+        }
         update();
     },1)
     setInterval(function () {
@@ -1348,7 +1369,10 @@ function startSimulation(startStorage=false)
 }
 function calcParamSimulation(dataForm = true)
 {
-    if (dataForm==true) setOption();
+    if (dataForm==true) 
+    {
+        setOption();
+    }
     map.width = 800 * 2 * opt.sizeMap;
     map.height = 600 * 2 * opt.sizeMap;
     quantityPanzer = opt.quantityPanzer;
@@ -1366,9 +1390,11 @@ function calcParamSimulation(dataForm = true)
         case 'medium': quantityBonus = freeCell * 0.05; break;
         case 'many': quantityBonus = freeCell * 0.1; break;
     }
-        
+
     if (dataForm == true) srand(opt.numRandom); else srand(numRand);
     console.log(opt.numRandom);
+    console.log("option",opt);
+    //console.log("bonuses",bonuses);
 }
 /*window.addEventListener("blur", function () {//здесь твой код})
     timeout = setTimeout(function () {
@@ -1423,7 +1449,7 @@ function create()
     canvas = document.getElementById("canvas");
     context = canvas.getContext("2d");
     initKeyboardAndMouse(['KeyA', 'KeyW', 'KeyS', 'KeyD',"NumpadSubtract",'NumpadAdd','Minus','Equal',
-                           'Space','Digit1','Digit2','Digit3','Digit4','Digit5','KeyQ','KeyH','KeyP',]);
+                           'Space','Digit1','Digit2','Digit3','Digit4','Digit5','KeyQ','KeyH','KeyP','KeyM',]);
  
   /*  srand(2);*/
     updateSize();
@@ -1531,12 +1557,12 @@ function create()
     bullets.init();
     burst = new Burst();
     burst.init();
-    bonuses = new Bonuses();
-    bonuses.init();
-    for (let i = 0; i < quantityBonus;i++)
+/*    bonuses = new Bonuses();
+    bonuses.init();*/
+    /*for (let i = 0; i < quantityBonus;i++)
     {
-        bonuses.new();
-    }
+       bonuses.new();
+    }*/
     genes = new Genes();
     genes.initCommandRand();
     helperArr[0] = new Helper(100,100,'green');
@@ -1547,10 +1573,10 @@ function create()
         teamMemoryArr.push(teamMemory);
     }
     console.log('teamMemory',teamMemoryArr);
-    for (let i = 0; i < panzerArr.length;i++ )
+    /*for (let i = 0; i < panzerArr.length;i++ )
     {
         console.log('memoryPanzer['+i+'] ',panzerArr[i].memory);
-    }
+    }*/
     //alert(55);
     //console.log(wallArr);
 }
@@ -1713,10 +1739,10 @@ function drawAll()
             }
         }
     
-        for (let i = 0; i < helperArr.length;i++)
+       /* for (let i = 0; i < helperArr.length;i++)
         {
             helperArr[i].draw();
-        }
+        }*/
     }
   /*  context.fillStyle = 'green';
     context.fillRect(helper.x-camera.x,helper.y-camera.y,helper.width,helper.height);*/
@@ -2060,6 +2086,18 @@ function readDataStorage()
     {
         countLoopIter=data.countLoopIter;
     }
+    if (typeof(data.maxScore)=='number')
+    {
+        maxScore=data.maxScore;
+    }
+    if (typeof(data.quantityBonus)=='number')
+    {
+        quantityBonus=Math.ceil(data.quantityBonus);
+    }
+    if (typeof(data.option)=='object')
+    {
+        opt=data.option;
+    }
     if (Array.isArray(data.wallArr)==true)
     {
         while (wallArr.length>0)
@@ -2082,6 +2120,7 @@ function readDataStorage()
             bonuses.bonusArr.push(data.bonusArr[i]);
         }
     }
+    console.log ('bonusesSTOROGE',bonuses)
     if (Array.isArray(data.panzerArr)==true)
     {
         while (panzerArr.length>0)
@@ -2105,19 +2144,37 @@ function readDataStorage()
         }
     }
 }
-function saveDataStorage()
+function createDataSave()
 {
-    localStorage.setItem('evolutionPanzers', JSON.stringify({
+    let data = JSON.stringify({
+        numRand: numRand,
+        numGeneration: numGeneration,
+        countLoopIter: countLoopIter,
+        maxScore: maxScore,
+        quantityBonus: quantityBonus,
+        option: opt,
+        wallArr: wallArr,
+        bonusArr: bonuses.bonusArr,
+        panzerArr: panzerArr,
+        teamMemory: teamMemory,
+    });
+    return data;
+}
+function saveDataStorage(data)
+{
+    localStorage.setItem('evolutionPanzers', data);
+/*    localStorage.setItem('evolutionPanzers', JSON.stringify({
             numRand: numRand,
             numGeneration: numGeneration,
             countLoopIter: countLoopIter,
+            maxScore: maxScore,
             option: opt,
             wallArr: wallArr,
             bonusArr: bonuses.bonusArr,
             panzerArr: panzerArr,
             teamMemory: teamMemory,
         })
-    );
+    );*/
 }
 function checkDataStorage()// проверить есть ли данные в локальном хранилише
 {
@@ -2140,6 +2197,10 @@ function update()
      window.document.hasFocus = function() {return true;}
 
     if (modeGame == 'GOD') cameraMove();
+    if (keyUpDuration('KeyM',100)==true)
+    {
+        downloadAsFile(dataSave,'saveEvolutionPanzers') 
+    }
     if (keyUpDuration('KeyH',100)==true)
     {
         modeGame = modeGame == 'GOD' ? 'HERO' : "GOD";
@@ -2420,7 +2481,7 @@ function nextGeneration()
     {
         
         countPanzersInTeam = calcPanzerInTeam();
-        console.log('panzerInTeam',countPanzersInTeam);
+     //   console.log('panzerInTeam',countPanzersInTeam);
 
         if (countPanzersInTeam.length>0)
         {
@@ -2530,8 +2591,10 @@ function nextGeneration()
         numGeneration++;
         if (maxScore < scoreGeneration) maxScore = scoreGeneration;
         scoreGeneration = 0;
-        numRand = new Date().setTime();
-        saveDataStorage();
+        numRand = new Date().getTime();
+        //srand(numRand);
+        dataSave = createDataSave();
+        saveDataStorage(dataSave);
     }
 }
 /*function nextGenerationOld()
