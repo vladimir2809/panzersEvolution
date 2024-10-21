@@ -51,6 +51,8 @@ var maxSteps = 0;
 var testFlagDirParam = true;
 var colorArrRGB = [];
 var dataSave = null;
+var dataResultFile=null;
+var formFile = null;
 var panzer = {
     being: true,
     x:1,
@@ -1121,7 +1123,7 @@ function updateFormStart()
     clearButton.addEventListener("click", clearStartWin,event)
     var range = document.getElementById('agressionMutate');
     var inputAgres = document.getElementById('valueAgression');
-    var inputArr = document.querySelectorAll('input');
+    var inputArr = document.querySelectorAll('#startForm input');
     /*range.addEventListener('change', function () {
         inputAgres.value = range.value;
     });*/
@@ -1242,19 +1244,42 @@ function setOption()
         }
     }
 }
+var file = null;
 window.addEventListener('load', function () {
     updateFormStart();
     var btnStart = document.getElementById('start');
     var startForm=document.getElementById('startForm');
     var btnContinue=document.getElementById('continue');
+    formFile=document.getElementById('formFile');
+    var btnLoad=document.getElementById('load');
+    file = document.getElementById('your-files');
+    file.addEventListener("change",function(){ 
+        console.log(file);
+        handleFiles();
+        var interval = setInterval(function () {
+            if (dataResultFile!=null)
+            {
+
+                //loadData(dataResultFile);
+                startSimulation(2);
+                console.log(dataResultFile);
+                clearInterval(interval);
+            }
+        },100);
+    });
     if (checkDataStorage()==false)
     {
         btnContinue.setAttribute('disabled','')
     }
+    btnLoad.onclick=function(event)
+    {
+        event.preventDefault();
+        formFile.style.display = 'block';
+    }
     btnContinue.onclick = function (event) {
         event.preventDefault();
         //calcParamSimulation();
-        startSimulation(true);
+        startSimulation(1);
         //flagStartStorage = true;
     }
    
@@ -1305,7 +1330,7 @@ window.addEventListener('load', function () {
         },16);*/
     }
 });
-function startSimulation(startStorage=false)
+function startSimulation(startStorage=0)
 {
 
     /*setOption();
@@ -1336,11 +1361,21 @@ function startSimulation(startStorage=false)
     startForm.style.display = 'none';
     canvas.style.display = 'block';
     //countLoopIter=1;
-    if (startStorage==true)
+    if (startStorage==1)
     {
        // setTimeout(function () {
 
         readDataStorage();
+        calcParamSimulation(false);
+     //   }, 10);
+        
+    }
+    if (startStorage==2)
+    {
+       // setTimeout(function () {
+
+    //    readDataStorage();
+        loadData(dataResultFile);
         calcParamSimulation(false);
      //   }, 10);
         
@@ -1350,7 +1385,7 @@ function startSimulation(startStorage=false)
     setTimeout(function(){
         countLoopIter=1;
         
-        if (startStorage==false)
+        if (startStorage==0 /*|| startStorage==2*/)
         {
             
             bonuses.init();
@@ -2070,10 +2105,8 @@ function addParamPanzer(panzer,plus=true,numParam=null)
     } while (flag2==true && numParam==null)
 
 }
-function readDataStorage()
+function loadData(data)
 {
-    let data = localStorage.getItem('evolutionPanzers');
-    data = JSON.parse(data); 
     if (typeof(data.numRand)=='number')
     {
         numRand=data.numRand;
@@ -2144,6 +2177,81 @@ function readDataStorage()
         }
     }
 }
+function readDataStorage()
+{
+    let data = localStorage.getItem('evolutionPanzers');
+    data = JSON.parse(data); 
+    loadData(data);
+  /*  if (typeof(data.numRand)=='number')
+    {
+        numRand=data.numRand;
+    }
+    if (typeof(data.numGeneration)=='number')
+    {
+        numGeneration=data.numGeneration;
+    }
+    if (typeof(data.countLoopIter)=='number')
+    {
+        countLoopIter=data.countLoopIter;
+    }
+    if (typeof(data.maxScore)=='number')
+    {
+        maxScore=data.maxScore;
+    }
+    if (typeof(data.quantityBonus)=='number')
+    {
+        quantityBonus=Math.ceil(data.quantityBonus);
+    }
+    if (typeof(data.option)=='object')
+    {
+        opt=data.option;
+    }
+    if (Array.isArray(data.wallArr)==true)
+    {
+        while (wallArr.length>0)
+        {
+           wallArr.splice(0,1);
+        }
+        for (let i = 0; i <data.wallArr.length;i++)
+        {
+            wallArr.push(data.wallArr[i]);
+        }
+    }
+    if (Array.isArray(data.bonusArr)==true)
+    {
+        while (bonuses.bonusArr.length>0)
+        {
+            bonuses.bonusArr.splice(0,1);
+        }
+        for (let i = 0; i <data.bonusArr.length;i++)
+        {
+            bonuses.bonusArr.push(data.bonusArr[i]);
+        }
+    }
+    console.log ('bonusesSTOROGE',bonuses)
+    if (Array.isArray(data.panzerArr)==true)
+    {
+        while (panzerArr.length>0)
+        {
+           panzerArr.splice(0,1);
+        }
+        for (let i = 0; i <data.panzerArr.length;i++)
+        {
+            panzerArr.push(data.panzerArr[i]);
+        }
+    }
+    if (Array.isArray(data.teamMemory)==true)
+    {
+        while (teamMemory.length>0)
+        {
+           teamMemory.splice(0,1);
+        }
+        for (let i = 0; i <data.teamMemory.length;i++)
+        {
+            teamMemory.push(data.teamMemory[i]);
+        }
+    }*/
+}
 function createDataSave()
 {
     let data = JSON.stringify({
@@ -2192,6 +2300,39 @@ function removeDataStorage()// удалить данные из локальнн
 {
     localStorage.removeItem('evolutionPanzers');
 }
+function handleFiles()
+    {
+        var form=document.getElementById('formFile');
+        
+        var fileOne=file.files[0];
+        //console.log(fileOne);
+        //objMap.loadMap(JSON.parse(localStorage.getItem('gameMap')));
+     //   alert(readFile(file));
+        var reader = new FileReader();
+        reader.readAsText(fileOne);
+        reader.onload = function() {
+          //objMap.loadMap(JSON.parse(reader.result));
+           
+           // console.log(dataRAMLevel);
+      /*      if (menuRedactor.loadMap!=undefined)
+            {
+                menuRedactor.loadMap = true;
+               // alert(111);
+            }*/
+            dataResultFile = reader.result;//JSON.parse(reader.result);
+            dataResultFile = JSON.parse(dataResultFile);
+        // alert(reader.result);
+        }
+        reader.onerror = function() {
+        
+            alert('ошибка загрузки карты');
+        }
+        //;
+        
+        file.value="";
+        form.style.display='none';
+   //     this.form.reset;
+    }
 function update() 
 {
      window.document.hasFocus = function() {return true;}
