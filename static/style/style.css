@@ -1,0 +1,63 @@
+body {
+}
+ #startForm{
+    display: block;
+    width: 500px;
+    margin: auto  auto auto auto;
+    border:1px solid black;
+}
+#startForm>h1{
+    margin-top: 1px;
+    text-align:center;
+}
+ #startForm div {
+    margin-bottom: 10px;
+}
+ #startForm label{
+    display: inline-block; 
+    min-width:  200px;
+    margin-left: 10px;
+}
+#startForm div #agressionMutate{
+    position: relative;
+    top: 4px;
+    /*margin-top: px;*/
+}
+#startForm div #valueAgression{
+    width: 30px;
+}
+#startForm div input[type=text]{
+    width: 63px;
+}
+ #startForm div select{
+    width: 71px;
+}
+#setButton{
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+#setButton button{
+    margin: 0px 20px;
+}
+#formFile{
+    border: 1px black solid;
+    background-color: #AAAAAA;
+    width: 250px;
+    height: 21px;
+    position: fixed;
+    top: 42%;
+    left: 50%;
+    -webkit-transform: translate(-50%, -50%);
+    -ms-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+    display: none;
+    /*    position:absolute;
+    left:auto;
+    top:auto;
+  */
+}
+/*CANVAS*/
+canvas{
+    display:none;
+}
