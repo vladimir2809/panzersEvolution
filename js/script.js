@@ -737,7 +737,7 @@ var Genes = function () {
     ],
     // описание комманд 
     this.commandDescr = [
-        {
+       {
             name: 'exec',// имя команды
             // массив параметров 
             valueArr:[
@@ -748,6 +748,7 @@ var Genes = function () {
             countValue: null,
             
         },
+        
         {
             name: 'goto',
             valueArr:[
@@ -2750,7 +2751,7 @@ function controlHumanPanzer(panzer,numP)// управление танком г�
     if (checkPressKey('KeyW') == true && panzer.dir!=0 )
     {
         panzer.dir = 0; 
-        panzer.angleTower = panzer.angleBody = 270;
+        panzer.angleTower = panzer.angleBody = -90;
         panzer.energy -= minusEnergy;
     }
     if (checkPressKey('KeyD') == true && panzer.dir!=1)
@@ -2842,7 +2843,7 @@ function completeGenesPanzer(panzer,numP)// исполнение генов та
             if (value==1 && panzer.dir!=0)
             {
                 panzer.dir=0;
-                panzer.angleTower = panzer.angleBody = 270;
+                panzer.angleTower = panzer.angleBody = -90;
                 panzer.energy -= minusEnergy;
             }
             if (value==2 && panzer.dir!=1) 
@@ -2871,13 +2872,23 @@ function completeGenesPanzer(panzer,numP)// исполнение генов та
         
             if (value==5)
             {
-                panzer.angleTower += 10;
+                panzer.angleTower += 12;
+                if (panzer.angleTower > 180)
+                {
+                    unar = panzer.angleTower - 180;
+                    panzer.angleTower = -180+unar;
+                }
                 panzer.energy -= minusEnergy/2;
             }
 
             if (value==6)
             {
-                panzer.angleTower -= 10;
+                panzer.angleTower -= 12;
+                if (panzer.angleTower < -180)
+                {
+                    unar = panzer.angleTower + 180;
+                    panzer.angleTower = 180+unar;
+                }
                 panzer.energy -= minusEnergy/2;
             }
 
@@ -3066,7 +3077,7 @@ function completeGenesPanzer(panzer,numP)// исполнение генов та
                 {
                     resArg2 = arg2;
                 }
-                return calc2Arg(simbol,resArg1,resArg2);
+                return Math.round(calc2Arg(simbol, resArg1, resArg2) % 1000);
                 //panzer.memory[valueMemory] = calc2Arg(simbol,resArg1,resArg2);
             }
       
