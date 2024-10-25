@@ -2872,7 +2872,7 @@ function completeGenesPanzer(panzer,numP)// исполнение генов та
         
             if (value==5)
             {
-                panzer.angleTower += 12;
+                panzer.angleTower += 10;
                 if (panzer.angleTower > 180)
                 {
                     unar = panzer.angleTower - 180;
@@ -2883,7 +2883,7 @@ function completeGenesPanzer(panzer,numP)// исполнение генов та
 
             if (value==6)
             {
-                panzer.angleTower -= 12;
+                panzer.angleTower -= 10;
                 if (panzer.angleTower < -180)
                 {
                     unar = panzer.angleTower + 180;
