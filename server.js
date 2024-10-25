@@ -8,7 +8,7 @@ var server = http.Server(app);
 var io = socketIO(server);
 var socketClient=null;
 var dataKey = null;
-var SimulatuinOn = false;
+var simulatuinOn = false;
 app.set('port', 5000);
 app.use('/static', express.static(__dirname + '/static'));
 
@@ -29,8 +29,12 @@ io.on('connection', function(socket) {
     socket.on('dataForGet', function (data) {
         console.log(data);
         dataKey = JSON.parse(JSON.stringify(data));
-        SimulatuinOn = true;
-        startSimulation();
+        if(simulatuinOn==false)
+        {
+            calcParamSimulation(false);
+            startSimulation();
+            simulatuinOn = true;
+        }
     });
 //    startSimulation();
 });
@@ -39,36 +43,55 @@ io.on('connection', function(socket) {
 });*/
 setInterval(function() {
     io.sockets.emit('message', 'hi!');
-    data = readyDataForSet();
-    io.sockets.emit('dataDraw',JSON.stringify(data));
-}, 1000);
+    if (simulatuinOn==true)
+    {
+        data = readyDataForSet();
+        io.sockets.emit('dataDraw',JSON.stringify(data));
+    }
+}, 16);
 
 function readyDataForSet()
 {
     let dataResult = null;
-    let panzerArrRes = [];
-    for (attr in dataKey)
+    
+    function returnData(key, arr)
     {
-        if (attr=='panzerArr')
+        arrRes = [];
+        for (attr in dataKey)
         {
-            for (let i = 0; i < panzerArr.length;i++)
+            if (attr==key)
             {
-                let panzerOne = {};
-                for (attr2 in panzerArr[i])
+                for (let i = 0; i < arr.length;i++)
                 {
-                    for (let j = 0; j < dataKey[attr].length;j++)
+                    let one = {};
+                    for (attr2 in arr[i])
                     {
-                        if (attr2==dataKey[attr][j])
+                        for (let j = 0; j < dataKey[attr].length;j++)
                         {
-                            panzerOne[attr2] = panzerArr[i][attr2];
+                            if (attr2==dataKey[attr][j])
+                            {
+                                one[attr2] = arr[i][attr2];
+                            }
                         }
                     }
+                    arrRes.push(one);
                 }
-                panzerArrRes.push(panzerOne);
             }
         }
+        return arrRes;
     }
-    dataResult = {panzerArr:panzerArrRes, };
+    let panzerArrRes = returnData('panzerArr', panzerArr);
+    let wallArrRes =  returnData('wallArr', wallArr);
+    let burstArrRes =  returnData('burstArr', burst.burstArr);
+    let bulletArrRes =  returnData('bulletArr', bullets.bulletArr);
+    let bonusArrRes =  returnData('bonusArr', bonuses.bonusArr);
+
+    dataResult = {panzerArr:panzerArrRes,
+                  wallArr:wallArrRes,
+                  burstArr:burstArrRes,
+                  bulletArr:bulletArrRes,
+                  bonusArr:bulletArrRes,
+                  bonusArr:bonusArrRes,};
     return dataResult;
 }
 
@@ -2825,7 +2848,7 @@ function controlHumanPanzer(panzer,numP)// управление танком г�
     if (checkPressKey('KeyW') == true && panzer.dir!=0 )
     {
         panzer.dir = 0; 
-        panzer.angleTower = panzer.angleBody = 270;
+        panzer.angleTower = panzer.angleBody = -90;
         panzer.energy -= minusEnergy;
     }
     if (checkPressKey('KeyD') == true && panzer.dir!=1)
@@ -2917,7 +2940,7 @@ function completeGenesPanzer(panzer,numP)// исполнение генов та
             if (value==1 && panzer.dir!=0)
             {
                 panzer.dir=0;
-                panzer.angleTower = panzer.angleBody = 270;
+                panzer.angleTower = panzer.angleBody = -90;
                 panzer.energy -= minusEnergy;
             }
             if (value==2 && panzer.dir!=1) 
@@ -2947,12 +2970,22 @@ function completeGenesPanzer(panzer,numP)// исполнение генов та
             if (value==5)
             {
                 panzer.angleTower += 10;
+                if (panzer.angleTower > 180)
+                {
+                    unar = panzer.angleTower - 180;
+                    panzer.angleTower = -180+unar;
+                }
                 panzer.energy -= minusEnergy/2;
             }
 
             if (value==6)
             {
                 panzer.angleTower -= 10;
+                if (panzer.angleTower < -180)
+                {
+                    unar = panzer.angleTower + 180;
+                    panzer.angleTower = 180+unar;
+                }
                 panzer.energy -= minusEnergy/2;
             }
 
@@ -3141,7 +3174,8 @@ function completeGenesPanzer(panzer,numP)// исполнение генов та
                 {
                     resArg2 = arg2;
                 }
-                return calc2Arg(simbol,resArg1,resArg2);
+                Math.round(calc2Arg(simbol, resArg1, resArg2) % 1000);
+               /* return calc2Arg(simbol,resArg1,resArg2);*/
                 //panzer.memory[valueMemory] = calc2Arg(simbol,resArg1,resArg2);
             }
       

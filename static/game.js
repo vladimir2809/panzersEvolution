@@ -13,29 +13,270 @@ var  canvasWidth= windowWidth;
 var  canvasHeight= windowHeight;
 var canvasWidthMore = true;
 var flagScaling = false;
-var scale = 1;
+var scale = 0.5;
+var size = 40;
+
+var imageArr=new Map();// массив картинок
+var nameImageArr = ['energy','patrons','HP'];
+var countLoadImage=0;// количество загруженных картинок
+
+var quantityColor = 4;//64
+var quantityBullet = 150;
+var quantityBurst = 150;
+var quantityTeam = 4;
+var quantityPanzer = 32// 64;
+var quantityWall = 64;
+var quantityBonus = 150;
+
+var progresslevel = [];
+var level = 1;
+
+var modeGame = 'GOD';// 'GOD', 'HERO', 'EGREGOR'
+
+var bonuses = null;
+var bullets =null;
+var burst = null;
+var numSelectPanzer = 0;
+var numGenesPanzer = 0;
+var visible = true;
+var wall = {
+    being:false,
+    x:null,
+    y:null,
+    width: size,
+    height: size,
+    type: 0,
+    color: 'grey',
+    lineArr:[],// массив линий для определение пересечения с прямой при расчетах
+}
+var map = {
+    x:0,
+    y:0,
+    width: 800*2,
+    height: 600*2,
+}
+var camera = {
+    x:0,
+    y:0,
+    width: 800,
+    height: 600, 
+}
+var  widthSide = screenWidth - camera.width;
+var  heightSide = screenHeight - camera.height;
+var panzerArr = [];
+var wallArr = [];
+
+var maxParam = {
+    maxHP:2000,
+    speed:30,
+    damage: 100,
+    accuracy: 100,
+    speedAttack: 100,
+}
 
 var dataForGet = {
-    wallArr:['x','y'],
-    burstArr:['x','y','count'],
-    bulletArr:['x','y'],
-    panzerArr:['x','y','color','angleBody','angleTower'],
-    bonusArr:["x",'y','type']
+    wallArr:['being','x','y','color','being',"width",'height'],
+    burstArr:['being','x','y','count'],
+    bulletArr:['being','x','y'],
+    panzerArr:['being','x','y','color','angleBody','angleTower','towerX',
+        'towerY','towerX1','towerY1',/*'centerX','centerY',*//*'towerLength',*/'sizeTower',"width",'height'],
+    bonusArr:['being',"x",'y','type',"width",'height']
 }
 var socket = io();
 socket.on('message', function(data) {
     console.log(data);
 });
 socket.on('dataDraw', function (data) {
-    console.log(data);
+   // console.log(JSON.parse(data));
+    data = JSON.parse(data);
+    panzerArr = JSON.parse(JSON.stringify(data.panzerArr));
+    wallArr = JSON.parse(JSON.stringify(data.wallArr));
+    burst.burstArr = JSON.parse(JSON.stringify(data.burstArr));
+    bonuses.bonusArr = JSON.parse(JSON.stringify(data.bonusArr));
+    bullets.bulletArr = JSON.parse(JSON.stringify(data.bulletArr));
+    //console.log(Arr);
+   /* drawAll();*/
 });
+setInterval(function () {
+    update();
+    drawAll();
+}, 16);
+
+function update() 
+{
+    cameraMove();
+    if (keyUpDuration('NumpadSubtract',100)==true)
+    {
+        scale*=0.75;
+        camera.x = 1;
+        camera.y = 1;
+    }
+    if (keyUpDuration('NumpadAdd',100)==true)
+    {
+        scale*=1.333;
+       // alert(scale);
+    }
+}
+
+function cameraMove()// движение камеры от клавиатуры
+{
+    let speedMoveCamera = 10;
+    if (checkPressKey('KeyW'))
+    {
+        if (camera.y>0) 
+        {
+            camera.y-=speedMoveCamera;
+        }
+        else
+        {
+            camera.y = 0;
+        }
+    }
+    if (checkPressKey('KeyD')) 
+    {
+       if (camera.x+camera.width<map.x+map.width)
+       {
+           camera.x+=speedMoveCamera;   
+       }
+       else
+       {
+           camera.x = map.x + map.width - camera.width;
+       }
+    }
+    if (checkPressKey('KeyS')) 
+    {
+       if (camera.y+camera.height<map.y+map.height)
+       {
+           camera.y+=speedMoveCamera;
+       }
+       else
+       {
+           camera.y = map.y + map.height - camera.height;
+       }
+    }
+    if (checkPressKey('KeyA')) 
+    {
+    //    camera.x-=speedMoveCamera;
+        if (camera.x>0) 
+        {
+            camera.x-=speedMoveCamera;
+        }
+        else
+        {
+            camera.x = 0;
+        }
+    }
+}
+
+var Bullets = function () { 
+   
+
+    this.bullet = {
+        being:false,
+        x:null,
+        y:null,
+        angle:null,
+        dist: 0,
+        DMG:null,
+        master: null,
+    }
+    this.speed = 20; 
+    this.bulletArr = [];
+    this.drawBullets=function(context)
+    {
+        let countTrue = 0;
+        for (let i = 0; i < this.bulletArr.length;i++)
+        {
+            if (this.bulletArr[i].being==true)
+            {
+                context.beginPath();
+                context.fillStyle = "#FFFF00";
+	            context.arc(this.bulletArr[i].x*scale-camera.x,this.bulletArr[i].y*scale-camera.y, 
+                                        2*scale, 2*Math.PI, false);
+	            context.fill();
+	            context.lineWidth = 1;
+	            context.strokeStyle = 'red';
+	            context.stroke();
+                countTrue++;
+            }
+        }
+        //context.fillText(countTrue+'',20,50);
+    }
+}
+var Burst=function()
+{
+    this.burstOne = {
+        being: false,
+        x: null,
+        y: null,
+        count: 0,
+        maxCount: 15,
+    }
+    this.burstArr = [];
+    this.draw=function()
+    {
+        for (let i = 0; i < this.burstArr.length;i++)
+        {
+            let burst = this.burstArr[i];
+        
+            if (burst.being==true)
+            {
+                context.strokeStyle = 'red';
+                context.lineWidth = 1;
+                context.beginPath();
+                context.arc(burst.x*scale-camera.x,burst.y*scale-camera.y,
+                                burst.count*scale, 0,3.14*2, false);
+                context.stroke()
+            }
+        }
+
+    }
+}
+var Bonuses = function () {
+    this.quantityBonus = quantityBonus; //150;
+    this.quantityBonusMin = 10;
+    this.bonus = {
+        being: false,
+        x:null,
+        y: null,
+        width: 30,
+        height: 30,
+        type: 0,//null
+        time: 0,
+        //maxTime: 100,
+    }
+      
+    this.timeNew = 3//250;
+    this.countTimeNew = 0;
+    this.bonusArr = [];
+    this.draw = function () 
+    {
+        for (let i = 0; i < this.bonusArr.length;i++)
+        {
+            if (this.bonusArr[i].being==true)
+            {
+                let nameImage = null;
+                switch(this.bonusArr[i].type)
+                {
+                    case 0: nameImage = 'patrons'; break;
+                    case 1: nameImage = 'energy'; break;
+                    case 2: nameImage = "HP"; break;
+                }
+                drawSprite(context,imageArr.get(nameImage),
+                    this.bonusArr[i].x,this.bonusArr[i].y,camera,scale)
+
+            }
+
+        }
+    }
+}
 function loadImageArr()// загрузить массив изображений
 {
     // заполняем массив изображений именами
     for (let value of nameImageArr  )
     {
         let image=new Image();
-        image.src="img/"+value+".png";   
+        image.src="/static/img/"+value+".png";   
         imageArr.set(value,image);
     }
     // проверяем загружены ли все изображения
@@ -176,6 +417,7 @@ function updateFormStart()
 }
 var file = null;
 window.addEventListener('load', function () {
+    loadImageArr();
     updateFormStart();
     var btnStart = document.getElementById('start');
     var startForm=document.getElementById('startForm');
@@ -185,6 +427,9 @@ window.addEventListener('load', function () {
     canvas = document.getElementById("canvas");
     context = canvas.getContext("2d");
     updateSize();
+    bonuses = new Bonuses();
+    bullets = new Bullets();
+    burst = new Burst();
     initKeyboardAndMouse(['KeyA', 'KeyW', 'KeyS', 'KeyD',"NumpadSubtract",'NumpadAdd','Minus','Equal',
                         'Space','Digit1','Digit2','Digit3','Digit4','Digit5','KeyQ','KeyH','KeyP','KeyM',]);
     file = document.getElementById('your-files');
@@ -297,13 +542,13 @@ function drawAll() // нарисовать все
         {
             if (panzerArr[i].being==true)
             {
-                if (numPanzMaxXP==i)
+          /*      if (numPanzMaxXP==i)
                 {
                     context.fillStyle = 'white';
                     context.fillRect(panzerArr[i].x*scale-3,panzerArr[i].y*scale-3,
                         panzerArr[i].width*scale+6,panzerArr[i].height*scale+6)
                     //drawPanzer(panzerArr[i],true);
-                }
+                }*/
               
                 if (numSelectPanzer==i)
                 {
@@ -317,7 +562,7 @@ function drawAll() // нарисовать все
                 
             }
         }
-        for (let i = 0; i < quantityWall;i++)
+        for (let i = 0; i < wallArr.length;i++)
         {
             drawWall(wallArr[i]);
         }
@@ -350,7 +595,7 @@ function drawAll() // нарисовать все
                 }
             }
         }
-        for (let i = 0; i < panzerArr.length;i++)
+ /*       for (let i = 0; i < panzerArr.length;i++)
         {
             if (visibleEnemy(numSelectPanzer,i)==true &&
                 panzerArr[numSelectPanzer].team!=panzerArr[i].team)
@@ -363,7 +608,7 @@ function drawAll() // нарисовать все
                 context.lineTo(panzerArr[i].centerX*scale-camera.x,panzerArr[i].centerY*scale-camera.y);
                 context.stroke(); 
             }
-        }
+        }*/
     
        /* for (let i = 0; i < helperArr.length;i++)
         {
@@ -373,17 +618,17 @@ function drawAll() // нарисовать все
     context.fillStyle = 'gray';
     context.fillRect(camera.width,1,widthSide,screenHeight);
     context.fillRect(1,camera.height,screenWidth,heightSide);
-
+/*
 
     if (visible==true)
     {
 
-        /* DRAW GENES*/
+        *//* DRAW GENES*//*
         genes.draw(context);
-    }
+    }*/
     //genes.draw(context,1120,genes.commandArrTwo);
 
-
+/*
     context.font='20px Arial';
     addY = 23;
     startY = 620;
@@ -406,7 +651,7 @@ function drawAll() // нарисовать все
 
     //context.font='25px Arial';
     context.fillStyle = 'blue';
-    context.fillText("max XP: "+maxXPPanzer, 1,startY+addY*5);
+    context.fillText("max XP: "+maxXPPanzer, 1,startY+addY*5);*/
    
     /*рисуем уровень и параметры танка*/
     if (visible==true)
@@ -421,14 +666,14 @@ function drawAll() // нарисовать все
         {
             numP = numGenesPanzer;
         }
-        levelNextXP = progresslevel[panzerArr[numP].level];
+       // levelNextXP = progresslevel[panzerArr[numP].level];
         context.font='25px Arial';
         context.fillStyle = 'white';
         /*context.fillText("Level: "+panzerArr[numP].level+" "
                     +"Evolutionary meat: "+panzerArr[numP].XP+" from: "+levelNextXP, 300,630);*/
-        context.fillText("Level: "+panzerArr[numP].level, 350,630);
+       // context.fillText("Level: "+panzerArr[numP].level, 350,630);
         drawParamPanzer(350, 650, numP);
-        drawButton(buttonSave);
+       // drawButton(buttonSave);
 
     }
     
