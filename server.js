@@ -36,6 +36,18 @@ io.on('connection', function(socket) {
             simulatuinOn = true;
         }
     });
+    socket.on('mouseClick', function (data) {
+     //   data = JSON.parse(data);
+        console.log("mouse",data);
+        for (let i = 0; i < panzerArr.length; i++) {
+            if (checkInObj(panzerArr[i], 
+                data.mouseX,data.mouseY
+                /*data.mouseX / scale + camera.x, data.mouseY / scale + camera.y*/)) {
+                numGenesPanzer = i;
+             //   flag = true;
+            }
+        }
+    });
 //    startSimulation();
 });
 /*socketClient.('dataForGet', function (data) {
@@ -91,7 +103,28 @@ function readyDataForSet()
                   burstArr:burstArrRes,
                   bulletArr:bulletArrRes,
                   bonusArr:bulletArrRes,
-                  bonusArr:bonusArrRes,};
+                  bonusArr:bonusArrRes,
+                  numGeneration: numGeneration,
+                  countLoopIter: countLoopIter,
+                  scoreGeneration: scoreGeneration,
+                  maxScore: maxScore,
+                  countBeingPanzer: countBeingPanzer,
+                  maxXPPanzer: maxXPPanzer,
+                  genes:{
+                        commandArr:panzerArr[numGenesPanzer].genes.commandArr,
+                        sensor:panzerArr[numGenesPanzer].sensor,
+                        state: panzerArr[numGenesPanzer].state,
+                        memory: panzerArr[numGenesPanzer].memory,
+                        teamMemory:teamMemoryArr[panzerArr[numGenesPanzer].team],
+                    }
+                  };
+    //console.log(panzerArr[numGenesPanzer].memory);
+/*    console.log(teamMemoryArr[panzerArr[numGenesPanzer].team])*/
+/*    genes.setData(panzerArr[numGenesPanzer].genes,
+                    panzerArr[numGenesPanzer].sensor,
+                    panzerArr[numGenesPanzer].state,
+                    panzerArr[numGenesPanzer].memory,
+                    teamMemoryArr[panzerArr[numGenesPanzer].team]);*/
     return dataResult;
 }
 
@@ -1643,6 +1676,10 @@ function create()
         panzerArr.push(panzerOne);
         updateStatePanzer(panzerArr[i]);
     }
+    for (let i = 0; i < quantityTeam;i++)
+    {
+        teamMemoryArr.push(teamMemory);
+    }
 
     console.log(panzerArr);
     bullets = new Bullets();
@@ -1654,10 +1691,6 @@ function create()
  /*   helperArr[0] = new Helper(100,100,'green');
     helperArr[1] = new Helper(150,150,'blue');
     helperArr[2] = new Helper(200,200,'red');*/
-    for (let i = 0; i < quantityTeam;i++)
-    {
-        teamMemoryArr.push(teamMemory);
-    }
     console.log('teamMemory',teamMemoryArr);
 }
 // расчитать стартовые параметры танка
@@ -2726,7 +2759,8 @@ function updateBarrierVisible()// обновить список барьеров
             panzerArr2.push(panzerArr[i]);
         }
     }
-    let barrierArr = [];//wallArr.concat([helperArr[1]]);
+    let barrierArr = []/*JSON.parse(JSON.stringify(wallArr)); *////[];//wallArr.concat([helperArr[1]]);
+    barrierArr = barrierArr.concat(wallArr);
     barrierArr = barrierArr.concat(panzerArr2);
     return barrierArr;
 }
@@ -2795,26 +2829,26 @@ function checkObjVisible(panzer,obj,barrierArr)// может ли танк по�
     {
         if (panzer.y>obj.y && panzer.y-obj.y<dist)
         {
-            if (checkBarrierVisible(panzer,obj,barrierArr,1)==false)
-            return 3;
+            if (checkBarrierVisible(panzer,obj,barrierArr,0)==false)
+            return 2;
         }
         else if (panzer.y<obj.y && obj.y - panzer.y<dist)
         {
-            if (checkBarrierVisible(panzer,obj,barrierArr,3)==false)
-            return 1;
+            if (checkBarrierVisible(panzer,obj,barrierArr,2)==false)
+            return 0;
         }
     }
     if (panzer.y<obj.y+obj.height && panzer.y+panzer.height>obj.y)
     {
         if (panzer.x>obj.x && panzer.x-obj.x<dist)
         {
-            if (checkBarrierVisible(panzer,obj,barrierArr,4)==false)
-            return 2;
+            if (checkBarrierVisible(panzer,obj,barrierArr,3)==false)
+            return 1;
         }
         else if (panzer.x<obj.x && obj.x-panzer.x<dist)
         {
-            if (checkBarrierVisible(panzer,obj,barrierArr,2)==false)
-            return 0;
+            if (checkBarrierVisible(panzer,obj,barrierArr,1)==false)
+            return 3;
         }
     }
    
@@ -2825,11 +2859,11 @@ function checkBarrierVisible(objStart,objFinish,arrBarrier,side)
 {
     let addXY ={x:0,y:0};
     let dist = 0;
-    if (side == 1) { dist = objStart.y - objFinish.y; addXY.y=-1}
-    if (side == 2) { dist = objFinish.x - objStart.x; addXY.x=1 }
+    if (side == 0) { dist = objStart.y - objFinish.y; addXY.y=-1}
+    if (side == 1) { dist = objFinish.x - objStart.x; addXY.x=1 }
 
-    if (side == 3) { dist = objFinish.y - objStart.y; addXY.y=1 }
-    if (side == 4) { dist = objStart.x - objFinish.x; addXY.x=-1}
+    if (side == 2) { dist = objFinish.y - objStart.y; addXY.y=1 }
+    if (side == 3) { dist = objStart.x - objFinish.x; addXY.x=-1}
     let objIter = JSON.parse(JSON.stringify(objStart));
     for (let i = 0; i < dist;i++)
     {
@@ -3026,7 +3060,7 @@ function completeGenesPanzer(panzer,numP)// исполнение генов та
                 {
                     flagTeamMemory = true;
                     let value = valueParamPanzerGens(value1, panzer);
-                    if (value!==false)
+                    if (value!==false && value!==undefined)
 
                     {
                         panzer.memory[value0] = value;
@@ -3045,7 +3079,7 @@ function completeGenesPanzer(panzer,numP)// исполнение генов та
                     if (value0==attr)
                     {
                         let value = valueParamPanzerGens(value1, panzer);
-                        if (value!==false)
+                        if (value!==false && value!==undefined)
 
                         {
                             teamMemoryArr[panzer.team][value0] = value;//valueParamPanzerGens(value1, panzer);
@@ -3174,8 +3208,8 @@ function completeGenesPanzer(panzer,numP)// исполнение генов та
                 {
                     resArg2 = arg2;
                 }
-                Math.round(calc2Arg(simbol, resArg1, resArg2) % 1000);
-               /* return calc2Arg(simbol,resArg1,resArg2);*/
+                return Math.round(calc2Arg(simbol, resArg1, resArg2)) % 1000;
+               // return calc2Arg(simbol,resArg1,resArg2);
                 //panzer.memory[valueMemory] = calc2Arg(simbol,resArg1,resArg2);
             }
       
@@ -3227,6 +3261,9 @@ function completeGenesPanzer(panzer,numP)// исполнение генов та
 }
 function calc2Arg(simbol,arg1,arg2)// решить пример по знаку
 {
+    //console.log("arg1"+arg1,"arg2"+arg2);
+    /* if (arg1 == null)  arg1=0;
+     if (arg2 == null)  arg2=0;*/
     if (simbol=='+')
     {
         /*if (arg1 == null) return arg2;
@@ -3255,11 +3292,12 @@ function calc2Arg(simbol,arg1,arg2)// решить пример по знаку
 }
 function valueParamPanzerGens(key,panzer)// собрать значения параметров танка
 {
-    let valueArr = panzer.sensor;
+    let valueArr = {...panzer.sensor};
     valueArr = { ...valueArr, ...panzer.state };
     valueArr = { ...valueArr, ...panzer.memory };
     valueArr = { ...valueArr, ...teamMemoryArr[panzer.team] };
     //if (keyUpDuration('KeyQ', 100)) console.log("team="+panzer.team,valueArr,teamMemoryArr);
+    /*console.log('valueArr',valueArr)*/
     for (attr in valueArr)
     {
 
@@ -3797,8 +3835,8 @@ var opt = {
     agressionMutate: 20,
     quantityEnergy: 500,
     quantityResources: "medium",
-    maxAge: 200,
-    timeGeneration: 100,
+    maxAge: 300,
+    timeGeneration: 150,
     numRandom: 1,
 }
 

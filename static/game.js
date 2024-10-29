@@ -28,6 +28,13 @@ var quantityPanzer = 32// 64;
 var quantityWall = 64;
 var quantityBonus = 150;
 
+var numGeneration = 0; 
+var countLoopIter = 0;
+var scoreGeneration = 0;
+var maxScore = 0;
+var countBeingPanzer = 0;
+var maxXPPanzer = 0;
+
 var progresslevel = [];
 var level = 1;
 
@@ -39,6 +46,8 @@ var burst = null;
 var numSelectPanzer = 0;
 var numGenesPanzer = 0;
 var visible = true;
+
+var historyCommand = [];
 var wall = {
     being:false,
     x:null,
@@ -61,6 +70,22 @@ var camera = {
     width: 800,
     height: 600, 
 }
+var memoryNull={
+    M1: 0,
+    M2: 0,
+    M3: 0,
+    M4: 0,
+    M5: 0,
+    M6: 0,
+    M7: 0,
+    M8: 0,
+}
+var teamMemory = {
+    MC1: 0,
+    MC2: 0,
+    MC3: 0,
+    MC4: 0,
+};
 var  widthSide = screenWidth - camera.width;
 var  heightSide = screenHeight - camera.height;
 var panzerArr = [];
@@ -79,7 +104,9 @@ var dataForGet = {
     burstArr:['being','x','y','count'],
     bulletArr:['being','x','y'],
     panzerArr:['being','x','y','color','angleBody','angleTower','towerX',
-        'towerY','towerX1','towerY1',/*'centerX','centerY',*//*'towerLength',*/'sizeTower',"width",'height'],
+        'towerY','towerX1','towerY1','sizeTower',"width",'height','HP','maxHP',
+        'energy','maxEnergy','speed','damage','accuracy','speedAttack','level',
+        ],
     bonusArr:['being',"x",'y','type',"width",'height']
 }
 var socket = io();
@@ -89,11 +116,32 @@ socket.on('message', function(data) {
 socket.on('dataDraw', function (data) {
    // console.log(JSON.parse(data));
     data = JSON.parse(data);
+    /*let memory = memorySizeOf(data,true);
+    console.log(memory);*/
     panzerArr = JSON.parse(JSON.stringify(data.panzerArr));
     wallArr = JSON.parse(JSON.stringify(data.wallArr));
     burst.burstArr = JSON.parse(JSON.stringify(data.burstArr));
     bonuses.bonusArr = JSON.parse(JSON.stringify(data.bonusArr));
     bullets.bulletArr = JSON.parse(JSON.stringify(data.bulletArr));
+    numGeneration = data.numGeneration,
+    countLoopIter= data.countLoopIter,
+    scoreGeneration = data.scoreGeneration,
+    maxScore = data.maxScore,
+    countBeingPanzer = data.countBeingPanzer,
+    maxXPPanzer = data.maxXPPanzer,
+   /* genes.setData({commandArr:data.genes.commandArr},
+                data.genes.sensor,
+                data.genes.state,
+                data.genes.memory,
+                data.genes.teamMemory
+            )*/
+    genes.commandArr=data.genes.commandArr;
+    genes.sensor=data.genes.sensor;
+    genes.state=data.genes.state;
+    genes.memory=data.genes.memory;
+    genes.teamMemory=data.genes.teamMemory;
+    //console.log(genes.memory);
+   
     //console.log(Arr);
    /* drawAll();*/
 });
@@ -115,6 +163,13 @@ function update()
     {
         scale*=1.333;
        // alert(scale);
+    }
+    if (mouseLeftClick()==true)
+    {
+        let data={mouseX: mouseX / scale + camera.x,
+              mouseY: mouseY / scale + camera.y
+            }
+        socket.emit('mouseClick', data);
     }
 }
 
@@ -268,6 +323,208 @@ var Bonuses = function () {
             }
 
         }
+    }
+}
+var Genes = function () {
+    this.quantityCommand = 48;
+    this.selectCommand = 0;
+    this.sensor = {
+        bonus: null,
+   /*     wall: null,*/
+        enemy: null,
+    }
+    // состояние танков
+    this.state = {
+        body: null,
+        tower: null,
+        HP:null,
+        energy:null,
+        patrons: null,
+        attack: 0,
+        collis:0,
+    }
+    // память танка в генах
+    this.memory={
+        M1: 0,
+        M2: 0,
+        M3: 0,
+        M4: 0,
+        M5: 0,
+        M6: 0,
+        M7: 0,
+        M8: 0,
+    },
+    // память команды в генах
+    this.teamMemory={
+        MC1: 0,
+        MC2: 0,
+        MC3: 0,
+        MC4: 0,
+    }
+    this.commandArr = [];
+    this.draw = function (context,xx=820,genesArr=null) 
+    {
+        let x = xx;
+        y = 10;
+        let widthCom = 200;
+        context.fillStyle = 'blue';
+        context.fillRect(x,y,widthCom,580);
+        context.fillStyle = 'white';
+        context.font = '10px Arial';
+        // рисуем строки выполненых комманд
+        if (historyCommand.length>0)
+        {
+            for (let i = 0; i < historyCommand.length;i++)
+            {
+                let value = historyCommand[i];
+                /*console.log('history ',historyCommand);*/
+                context.fillStyle = '#008800 ';
+                context.fillRect(x,y+value*12+3,widthCom,12);
+                context.fillStyle = 'white';
+                context.fillText(i,x+widthCom-10,y+value*12+12);
+                if (i==historyCommand.length-1)
+                {
+                    context.fillStyle = '#964b00 ';
+                    context.fillRect(x,y+value*12+4,widthCom,12);
+                }
+            }
+        }
+        
+        let addX = 50;
+        let commandArr = null;
+        if (genesArr==null || genesArr.length==0)
+        {
+             commandArr = JSON.parse(JSON.stringify(this.commandArr));
+        }
+        else
+        {
+             commandArr = JSON.parse(JSON.stringify(genesArr));
+        }
+        // хелпер, рисуем второй стакан с командами. нужно был при разработке
+        for (let i = 0; i < this.commandArr.length;i++)
+        {
+
+            
+            
+            context.fillStyle = 'white';
+            context.fillText(i,x+3,y+i*12+12);
+            if (x!=820 && genesArr!=null && genesArr.length>0)
+            {
+                if (this.commandArr[i].name==genesArr[i].name)
+                {
+                    context.fillStyle = 'white';
+
+                }
+                else
+                {
+                    context.fillStyle = 'red';
+                }
+
+            }
+            context.fillText(commandArr[i].name,x+20,y+i*12+12);
+            let oldX = addX;
+            for (let j = 0; j < commandArr[i].values.length;j++)
+            {
+                
+                if (x!=820 && genesArr!=null && genesArr.length>0)
+                {
+                    if (this.commandArr[i].values[j]==genesArr[i].values[j])
+                    {
+                        context.fillStyle = 'white';
+
+                    }
+                    else
+                    {
+                        context.fillStyle = 'red';
+                    }
+                }                    
+                context.fillText(commandArr[i].values[j],x+oldX/*+addX+j*addX*/,y+i*12+12);
+                oldX += context.measureText(commandArr[i].values[j]).width + 10;
+
+            }
+        }
+        // если нет вторых комманд
+        if (genesArr==null)
+        {
+
+            let index = 0;
+            addX = 45/*+widthCom*/;
+            let multY = 18;
+            colorText = 'white';
+            y += 10;
+            x += 85+widthCom/2;
+            context.font = '14px Arial';
+            context.fillStyle = 'white';
+            context.fillText("Sensor",x+addX,y);
+            context.font = '12px Arial';
+            // рисуем сенсор
+            for (prop in this.sensor)
+            {
+                context.fillStyle = "blue";
+                context.fillRect(x + /*85 +*/ addX * 2-4, y + index * multY + multY/3+1, 30, 15);
+                context.fillStyle = colorText;
+                context.fillText(prop,x+/*85+*/addX,y+index*multY+multY);
+
+                context.fillText(this.sensor[prop],x+/*85+*/addX*2,y+index*multY+multY);
+                index++;
+            }
+            y += multY * 4;
+            index = 0;
+            context.font = '14px Arial';
+            context.fillStyle = 'white';
+            context.fillText("State",x+addX,y);
+            context.font = '12px Arial';
+            // рисуем состоние танка
+            for (prop in this.state)
+            {
+                context.fillStyle = "blue";
+                context.fillRect(x + /*85 +*/ addX * 2-4, y + index * multY + multY/3+1, 30, 15);
+                context.fillStyle = colorText;
+                context.fillText(prop,x+/*85+*/addX,y+index*multY+multY);
+
+                context.fillText(this.state[prop],x+/*85+*/addX*2,y+index*multY+multY);
+                index++;
+            }
+            index = 0;
+            y += multY * 8;
+            // рисуем пямять танка
+            for (prop in this.memory)
+            {
+                context.fillStyle = "blue";
+                context.fillRect(x + /*85 +*/ addX * 2-4, y + index * multY + multY/3+1, 30, 15);
+                context.fillStyle = colorText;
+                context.fillText(prop,x+/*85+*/addX,y+index*multY+multY);
+
+                context.fillText(this.memory[prop],x+/*85+*/addX*2,y+index*multY+multY);
+                index++;
+                if (index == 8) y += 20;
+            }
+            // рисуем командную память
+            for (prop in this.teamMemory)
+            {
+                context.fillStyle = "blue";
+                context.fillRect(x + /*85 +*/ addX * 2-4, y + index * multY + multY/3+1, 30, 15);
+                context.fillStyle = colorText;
+                context.fillText(prop,x+/*85+*/addX,y+index*multY+multY);
+
+                context.fillText(this.teamMemory[prop],x+/*85+*/addX*2,y+index*multY+multY);
+                index++;
+                if (index == 8) y += 20;
+            }
+        }
+    }
+    this.setData=function(data,sensor,state,memory,teamMemory)
+    {
+     //   console.log(data);
+        this.commandArr = [];
+        for (let i = 0;i< data.commandArr.length;i++)
+        {
+            this.commandArr.push(data.commandArr[i]);
+        }
+        this.sensor =JSON.parse(JSON.stringify(sensor))
+        this.state =JSON.parse(JSON.stringify(state))
+        this.memory =JSON.parse(JSON.stringify(memory))
+        this.teamMemory = JSON.parse(JSON.stringify(teamMemory));
     }
 }
 function loadImageArr()// загрузить массив изображений
@@ -430,6 +687,7 @@ window.addEventListener('load', function () {
     bonuses = new Bonuses();
     bullets = new Bullets();
     burst = new Burst();
+    genes = new Genes();
     initKeyboardAndMouse(['KeyA', 'KeyW', 'KeyS', 'KeyD',"NumpadSubtract",'NumpadAdd','Minus','Equal',
                         'Space','Digit1','Digit2','Digit3','Digit4','Digit5','KeyQ','KeyH','KeyP','KeyM',]);
     file = document.getElementById('your-files');
@@ -618,17 +876,17 @@ function drawAll() // нарисовать все
     context.fillStyle = 'gray';
     context.fillRect(camera.width,1,widthSide,screenHeight);
     context.fillRect(1,camera.height,screenWidth,heightSide);
-/*
+
 
     if (visible==true)
     {
 
-        *//* DRAW GENES*//*
+         //DRAW GENES
         genes.draw(context);
-    }*/
+    }
     //genes.draw(context,1120,genes.commandArrTwo);
 
-/*
+
     context.font='20px Arial';
     addY = 23;
     startY = 620;
@@ -651,7 +909,7 @@ function drawAll() // нарисовать все
 
     //context.font='25px Arial';
     context.fillStyle = 'blue';
-    context.fillText("max XP: "+maxXPPanzer, 1,startY+addY*5);*/
+    context.fillText("max XP: "+maxXPPanzer, 1,startY+addY*5);
    
     /*рисуем уровень и параметры танка*/
     if (visible==true)
@@ -671,7 +929,7 @@ function drawAll() // нарисовать все
         context.fillStyle = 'white';
         /*context.fillText("Level: "+panzerArr[numP].level+" "
                     +"Evolutionary meat: "+panzerArr[numP].XP+" from: "+levelNextXP, 300,630);*/
-       // context.fillText("Level: "+panzerArr[numP].level, 350,630);
+        context.fillText("Level: "+panzerArr[numP].level, 350,630);
         drawParamPanzer(350, 650, numP);
        // drawButton(buttonSave);
 
