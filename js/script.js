@@ -2630,6 +2630,7 @@ function updateBarrierVisible()// обновить список барьеров
         }
     }
     let barrierArr = [];//wallArr.concat([helperArr[1]]);
+    barrierArr = barrierArr.concat(wallArr);
     barrierArr = barrierArr.concat(panzerArr2);
     return barrierArr;
 }
