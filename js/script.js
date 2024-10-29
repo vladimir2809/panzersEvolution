@@ -3078,7 +3078,7 @@ function completeGenesPanzer(panzer,numP)// исполнение генов та
                 {
                     resArg2 = arg2;
                 }
-                return Math.round(calc2Arg(simbol, resArg1, resArg2) % 1000);
+                return Math.round(calc2Arg(simbol, resArg1, resArg2))% 1000;
                 //panzer.memory[valueMemory] = calc2Arg(simbol,resArg1,resArg2);
             }
       
