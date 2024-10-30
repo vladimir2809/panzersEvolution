@@ -13,7 +13,7 @@ var  canvasWidth= windowWidth;
 var  canvasHeight= windowHeight;
 var canvasWidthMore = true;
 var flagScaling = false;
-var scale = 0.5;
+var scale = 1;
 var size = 40;
 
 var imageArr=new Map();// массив картинок
@@ -48,6 +48,8 @@ var numGenesPanzer = 0;
 var visible = true;
 
 var historyCommand = [];
+
+var simulationOn = false;
 var wall = {
     being:false,
     x:null,
@@ -110,8 +112,9 @@ var dataForGet = {
     bonusArr:['being',"x",'y','type',"width",'height']
 }
 var socket = io();
-socket.on('message', function(data) {
+socket.on('messageStart', function(data) {
     console.log(data);
+    simulationOn = data;
 });
 socket.on('dataDraw', function (data) {
    // console.log(JSON.parse(data));
@@ -140,14 +143,19 @@ socket.on('dataDraw', function (data) {
     genes.state=data.genes.state;
     genes.memory=data.genes.memory;
     genes.teamMemory=data.genes.teamMemory;
+    historyCommand = data.historyCommand;
     //console.log(genes.memory);
    
     //console.log(Arr);
    /* drawAll();*/
 });
 setInterval(function () {
-    update();
-    drawAll();
+    if (simulationOn==true)
+    {
+
+        update();
+        drawAll();
+    } 
 }, 16);
 
 function update() 
@@ -726,13 +734,49 @@ window.addEventListener('load', function () {
         event.preventDefault();
         startForm.style.display = 'none';
         canvas.style.display = 'block';
+        setOption();
         socket.emit('dataForGet', dataForGet);
+        socket.emit('dataOption',opt);
       //  removeDataStorage();
         //calcParamSimulation();
        // startSimulation();
     }
 });
+setInterval(function(){
+    if (simulationOn==true)
+    {
+        startForm.style.display = 'none';
+        canvas.style.display = 'block';
+    }
+    else
+    {
+        startForm.style.display = 'block';
+        canvas.style.display = 'none';
+    }
 
+},16);
+function setOption()
+{
+    //event.preventDefault();
+    domElemsArr = [];
+    for (attr in opt)
+    {
+        domElem = document.getElementById(attr);
+        domElemsArr.push(domElem);
+    }
+    console.log(domElemsArr[0].id);
+    for (let i = 0; i < domElemsArr.length;i++)
+    {
+        for (attr in opt)
+        {
+            if (attr==domElemsArr[i].id)
+            {
+                //domElemsArr[i].setAttribute('value', opt[attr]);
+                opt[attr]=domElemsArr[i].value;
+            }
+        }
+    }
+}
  
 /*  srand(2);*/
 //updateSize();

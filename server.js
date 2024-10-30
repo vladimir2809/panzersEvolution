@@ -9,6 +9,7 @@ var io = socketIO(server);
 var socketClient=null;
 var dataKey = null;
 var simulatuinOn = false;
+var countGetData = 0;
 app.set('port', 5000);
 app.use('/static', express.static(__dirname + '/static'));
 
@@ -29,12 +30,14 @@ io.on('connection', function(socket) {
     socket.on('dataForGet', function (data) {
         console.log(data);
         dataKey = JSON.parse(JSON.stringify(data));
-        if(simulatuinOn==false)
-        {
-            calcParamSimulation(false);
-            startSimulation();
-            simulatuinOn = true;
-        }
+        countGetData++;
+        startByData();
+    });
+    socket.on('dataOption', function (data) {
+        opt = data;
+        console.log('option', opt);
+        countGetData++;
+        startByData();
     });
     socket.on('mouseClick', function (data) {
      //   data = JSON.parse(data);
@@ -54,14 +57,23 @@ io.on('connection', function(socket) {
     console.log(data);
 });*/
 setInterval(function() {
-    io.sockets.emit('message', 'hi!');
+    io.sockets.emit('messageStart',simulatuinOn);
     if (simulatuinOn==true)
     {
         data = readyDataForSet();
         io.sockets.emit('dataDraw',JSON.stringify(data));
     }
 }, 16);
+function startByData()
+{
 
+    if(countGetData==2 && simulatuinOn==false)
+    {
+        calcParamSimulation(false);
+        startSimulation();
+        simulatuinOn = true;
+    }
+}
 function readyDataForSet()
 {
     let dataResult = null;
@@ -116,7 +128,8 @@ function readyDataForSet()
                         state: panzerArr[numGenesPanzer].state,
                         memory: panzerArr[numGenesPanzer].memory,
                         teamMemory:teamMemoryArr[panzerArr[numGenesPanzer].team],
-                    }
+                    },
+                    historyCommand: historyCommand,
                   };
     //console.log(panzerArr[numGenesPanzer].memory);
 /*    console.log(teamMemoryArr[panzerArr[numGenesPanzer].team])*/
@@ -196,8 +209,8 @@ var panzer = {
         B: 255,
     },
     color: "white",
-    angleBody: 270,
-    angleTower: 270,
+    angleBody: 0,
+    angleTower: 0,
     dir:0,
     speed:10,
     maxHP: 1000,
@@ -1392,7 +1405,7 @@ function updateFormStart()
     }
 }*/
 // заполнить opt из настроек формы старта
-function setOption()
+/*function setOption()
 {
     //event.preventDefault();
     domElemsArr = [];
@@ -1413,7 +1426,7 @@ function setOption()
             }
         }
     }
-}
+}*/
 /*var file = null;
 window.addEventListener('load', function () {
     updateFormStart();
@@ -1507,10 +1520,10 @@ function startSimulation(startStorage=0)
 // расчитать параметры симуляции
 function calcParamSimulation(dataForm = true)
 {
-    if (dataForm==true) 
+    /*if (dataForm==true) 
     {
         setOption();
-    }
+    }*/
     map.width = 800 * 2 * opt.sizeMap;
     map.height = 600 * 2 * opt.sizeMap;
     quantityPanzer = opt.quantityPanzer;
@@ -2273,7 +2286,7 @@ function readDataStorage()// считать из локального храни
     data = JSON.parse(data); 
     loadData(data);
 }
-function createDataSave()// созать данные для сохранения
+function createDataSave()// создать данные для сохранения
 {
     let data = JSON.stringify({
         numRand: numRand,
@@ -2529,6 +2542,8 @@ function updateStatePanzer(panzer)// обновить состояние так�
     panzer.towerY1 = panzer.towerY +( Math.sin((Math.PI / 180) * panzer.angleTower) * panzer.towerLength)//*scale;
     panzer.towerX1 = panzer.towerX +( Math.cos((Math.PI / 180) * panzer.angleTower) * panzer.towerLength)//*scale;
     panzer.state.body = panzer.angleBody/90;
+    panzer.state.body++;
+    //if (panzer.state.body == -1) panzer.state.body = 0;
     panzer.state.tower =Math.trunc( panzer.angleTower);
     panzer.state.HP = Math.trunc(panzer.HP/panzer.maxHP*100);
     panzer.state.energy= Math.trunc(panzer.energy/panzer.maxEnergy*100);
