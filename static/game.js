@@ -716,7 +716,7 @@ window.addEventListener('load', function () {
     updateFormStart();
     var btnStart = document.getElementById('start');
     var startForm=document.getElementById('startForm');
-    var btnContinue=document.getElementById('continue');
+/*    var btnContinue=document.getElementById('continue');*/
     formFile=document.getElementById('formFile');
     var btnLoad=document.getElementById('load');
     canvas = document.getElementById("canvas");
@@ -755,10 +755,10 @@ window.addEventListener('load', function () {
         event.preventDefault();
         formFile.style.display = 'block';
     }
-    btnContinue.onclick = function (event) {
+  /*  btnContinue.onclick = function (event) {
         event.preventDefault();
         startSimulation(1);
-    }
+    }*/
    
 
     btnStart.onclick=function(event)

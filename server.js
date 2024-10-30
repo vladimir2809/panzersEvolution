@@ -3,6 +3,7 @@ var express = require('express');
 var http = require('http');
 var path = require('path');
 var socketIO = require('socket.io');
+var fs=require('fs');
 var app = express();
 var server = http.Server(app);
 var io = socketIO(server);
@@ -11,6 +12,8 @@ var dataKey = null;
 var simulatuinOn = false;
 var countGetData = 0;
 var dataLoad = null;
+var startDate = null;
+var nameDir = '';
 app.set('port', 5000);
 app.use('/static', express.static(__dirname + '/static'));
 
@@ -29,7 +32,7 @@ io.on('connection', function(socket) {
     console.log("socket"+socket);
     socketClient = socket.id;
     socket.on('dataForGet', function (data) {
-        console.log(data);
+        //console.log(data);
         dataKey = JSON.parse(JSON.stringify(data));
         countGetData++;
         startByData();
@@ -41,10 +44,14 @@ io.on('connection', function(socket) {
         startByData();
     });
     socket.on('dataLoad', function(data){
-        console.log(data);
+        //console.log(data);
         dataResultFile = data;
         simulatuinOn = true;
+        startDate = new Date();
+        nameDir = dateToStr(startDate);
+        newFolder(nameDir);
         startSimulation(2);
+
 
     });
     socket.on('mouseClick', function (data) {
@@ -77,9 +84,13 @@ function startByData()
 
     if(countGetData==2 && simulatuinOn==false)
     {
-        calcParamSimulation(false);
+        calcParamSimulation(true);
         startSimulation();
         simulatuinOn = true;
+        startDate = new Date();
+        nameDir = dateToStr(startDate);
+        newFolder(nameDir);
+       // fileHandler('bestGeneration123', JSON.stringify(wallArr));
     }
 }
 function readyDataForSet()
@@ -149,7 +160,33 @@ function readyDataForSet()
                     teamMemoryArr[panzerArr[numGenesPanzer].team]);*/
     return dataResult;
 }
-
+function dateToStr(date)
+{
+    let str = date.getDate() + "-" + date.getMonth() + "-" + date.getFullYear() + '-' +
+        date.getHours() + "-" + date.getMinutes() + "-" + date.getSeconds();
+    //let str = date.toISOString()+'';
+   // console.log(str);
+    return str;
+}
+function fileHandler(name,data){
+    // создание файла
+    fs.open('bestGeneration/'+nameDir+'/'+name+'.txt', 'w', (err) => {
+        if(err) throw err;
+        console.log('File created');
+    });
+    // запись в файл
+    fs.writeFile('bestGeneration/'+nameDir+'/'+name+'.txt', data/*"I'm the replacement you've been looking for."*/, (err) => {
+        if(err) throw err;
+        console.log('Data has been replaced!');
+    });
+}
+function newFolder(nameDir)
+{
+    fs.mkdir('bestGeneration/'+nameDir, { recursive: true }, err => {
+        if(err) throw err; // не удалось создать папки
+        console.log('Все папки успешно созданы');
+    });
+}
 var canvas = null;
 var context = null;
 /*var canvasWidth = 1024;
@@ -698,7 +735,7 @@ var Bonuses = function () {
             this.bonusArr.push(bonusOne);
            // if (i<this.quantityBonusMin)  this.new();
         }
-        console.log('bonuses', this.bonusArr);
+       // console.log('bonuses', this.bonusArr);
     }
     this.draw = function () 
     {
@@ -1102,7 +1139,7 @@ var Genes = function () {
                                     {
                                         result = randomInteger(min, max);
                                     }
-                                    console.log('VALUE', result);
+                                   // console.log('VALUE', result);
                                     commandArr2[R].values[k] = result;
                               
                                     flagBreak = true; 
@@ -1492,6 +1529,11 @@ function startSimulation(startStorage=0)
     create();
    /* startForm.style.display = 'none';
     canvas.style.display = 'block';*/
+   /* if (startStorage==0)// загрузить данные из local  Storoge
+    {
+        calcParamSimulation(true);
+        
+    }*/
     if (startStorage==1)// загрузить данные из local  Storoge
     {
         readDataStorage();
@@ -1552,8 +1594,8 @@ function calcParamSimulation(dataForm = true)
     }
 
     if (dataForm == true) srand(opt.numRandom); else srand(numRand);
-    console.log(opt.numRandom);
-    console.log("option",opt);
+    //console.log(opt.numRandom);
+    //console.log("option",opt);
     //console.log("bonuses",bonuses);
 }
 /*window.addEventListener("blur", function () {//здесь твой код})
@@ -1652,7 +1694,7 @@ function create()
         colorArr.push(color);
         colorArrRGB.push(colorRGB);
     }
-    console.log(colorArr);
+ //   console.log(colorArr);
     // инициализируем progressLevel
     for (let i = 1; i <= maxLevel;i++)
     {
@@ -1661,7 +1703,7 @@ function create()
         let levelXP=x * ( Math.pow(i,y)) - (x * i)
         progresslevel.push(levelXP);
     }
-    console.log('progressLevel',progresslevel);
+   // console.log('progressLevel',progresslevel);
     // инициализируем стены
     for (let i = 0; i < quantityWall;i++)
     {
@@ -1675,7 +1717,7 @@ function create()
         wallArr.push(wallOne);
 
     }
-    console.log(wallArr);
+   // console.log(wallArr);
     // инициализиуем танки
     for (let i = 0; i < quantityPanzer;i++)
     {
@@ -1703,7 +1745,7 @@ function create()
         teamMemoryArr.push(teamMemory);
     }
 
-    console.log(panzerArr);
+   // console.log(panzerArr);
     bullets = new Bullets();
     bullets.init();
     burst = new Burst();
@@ -1713,7 +1755,7 @@ function create()
  /*   helperArr[0] = new Helper(100,100,'green');
     helperArr[1] = new Helper(150,150,'blue');
     helperArr[2] = new Helper(200,200,'red');*/
-    console.log('teamMemory',teamMemoryArr);
+  //  console.log('teamMemory',teamMemoryArr);
 }
 // расчитать стартовые параметры танка
 function calcStartParamPanzer(panzerOne)
@@ -2265,7 +2307,7 @@ function loadData(data)// загрузить данные. Из дата в пе
             bonuses.bonusArr.push(data.bonusArr[i]);
         }
     }
-    console.log ('bonusesSTOROGE',bonuses)
+    //console.log ('bonusesSTOROGE',bonuses)
     if (Array.isArray(data.panzerArr)==true)
     {
         while (panzerArr.length>0)
@@ -2758,14 +2800,20 @@ function nextGeneration()// следуюшие поколение
             
         }
         console.log ('generation: '+numGeneration,'scoreGeneration: '+scoreGeneration)
-        countLoopIter = 0;
+        if (maxScore < scoreGeneration)
+        {
+            maxScore = scoreGeneration;
+            if (dataSave==null) dataSave = createDataSave();
+            fileHandler('bestGeneration-'+numGeneration+' score-'+scoreGeneration, dataSave);
+        }
+        dataSave = createDataSave();
         numGeneration++;
-        if (maxScore < scoreGeneration) maxScore = scoreGeneration;
-        scoreGeneration = 0;
+        countLoopIter = 0;
+        scoreGeneration =  0;
         numRand = new Date().getTime();
         //srand(numRand);
-        dataSave = createDataSave();
-      //  saveDataStorage(dataSave);
+        
+       // saveDataStorage(dataSave);
     }
 }
 function updateBarrierVisible()// обновить список барьеров
