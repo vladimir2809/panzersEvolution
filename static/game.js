@@ -50,6 +50,7 @@ var visible = true;
 var historyCommand = [];
 
 var simulationOn = false;
+var dataResultFile = null;
 var wall = {
     being:false,
     x:null,
@@ -119,8 +120,10 @@ socket.on('messageStart', function(data) {
 socket.on('dataDraw', function (data) {
    // console.log(JSON.parse(data));
     data = JSON.parse(data);
+    
     /*let memory = memorySizeOf(data,true);
     console.log(memory);*/
+    map = data.map;
     panzerArr = JSON.parse(JSON.stringify(data.panzerArr));
     wallArr = JSON.parse(JSON.stringify(data.wallArr));
     burst.burstArr = JSON.parse(JSON.stringify(data.burstArr));
@@ -197,13 +200,14 @@ function cameraMove()// движение камеры от клавиатуры
     }
     if (checkPressKey('KeyD')) 
     {
-       if (camera.x+camera.width<map.x+map.width)
+       if (camera.x+camera.width<map.x+map.width)       
        {
            camera.x+=speedMoveCamera;   
        }
        else
        {
-           camera.x = map.x + map.width - camera.width;
+           camera.x =map.x + map.width - camera.width;
+
        }
     }
     if (checkPressKey('KeyS')) 
@@ -229,6 +233,32 @@ function cameraMove()// движение камеры от клавиатуры
             camera.x = 0;
         }
     }
+    function focusXY(x,y,map)// следить камерой за определеной точкой
+    {
+        camera.focusX=x;
+        camera.focusY=y;
+        camera.x=x-camera.width/2+camera.offsetX;
+        camera.y=y-camera.height/2+camera.offsetY;
+        if (x<map.x+(camera.width/2)/scale) camera.x=map.x;
+        else if (x>map.x+(map.width-camera.width/2/scale)) 
+        {
+            
+          camera.x=map.x+map.width-camera.width/scale;
+          //alert("123");
+        }
+        if (y<map.y+(camera.height/2)/scale) camera.y=map.y;
+        else if (y>map.x+map.height-camera.height/2/scale) camera.y=map.y+map.height-camera.height/scale;;
+        if (camera.height/scale > screenHeight)
+        {
+            camera.y=0;
+        }
+        if (camera.width/scale > screenWidth)
+        {
+            camera.x=0;
+         ///   console.log(camera.width/2/scale+"   "+screenWidth);
+        }
+    }
+    //focusXY(camera.x, camera.y, map);
 }
 
 var Bullets = function () { 
@@ -707,8 +737,10 @@ window.addEventListener('load', function () {
             if (dataResultFile!=null)
             {
 
-                startSimulation(2);
-                console.log(dataResultFile);
+                //startSimulation(2);
+                //console.log(dataResultFile);
+                socket.emit('dataForGet', dataForGet);
+                socket.emit('dataLoad', dataResultFile);
                 clearInterval(interval);
             }
         },100);
@@ -755,6 +787,26 @@ setInterval(function(){
     }
 
 },16);
+function handleFiles()// загрузить и читать из файла
+{
+    var form=document.getElementById('formFile');
+        
+    var fileOne=file.files[0];
+    var reader = new FileReader();
+    reader.readAsText(fileOne);
+    reader.onload = function() {
+        dataResultFile = reader.result;//JSON.parse(reader.result);
+        dataResultFile = JSON.parse(dataResultFile);
+    }
+    reader.onerror = function() {
+        
+        alert('ошибка загрузки карты');
+    }
+        
+        
+    file.value="";
+    form.style.display='none';
+}
 function setOption()
 {
     //event.preventDefault();

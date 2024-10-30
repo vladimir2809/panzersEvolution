@@ -10,6 +10,7 @@ var socketClient=null;
 var dataKey = null;
 var simulatuinOn = false;
 var countGetData = 0;
+var dataLoad = null;
 app.set('port', 5000);
 app.use('/static', express.static(__dirname + '/static'));
 
@@ -38,6 +39,13 @@ io.on('connection', function(socket) {
         console.log('option', opt);
         countGetData++;
         startByData();
+    });
+    socket.on('dataLoad', function(data){
+        console.log(data);
+        dataResultFile = data;
+        simulatuinOn = true;
+        startSimulation(2);
+
     });
     socket.on('mouseClick', function (data) {
      //   data = JSON.parse(data);
@@ -110,7 +118,8 @@ function readyDataForSet()
     let bulletArrRes =  returnData('bulletArr', bullets.bulletArr);
     let bonusArrRes =  returnData('bonusArr', bonuses.bonusArr);
 
-    dataResult = {panzerArr:panzerArrRes,
+    dataResult = {map:map,
+                  panzerArr:panzerArrRes,
                   wallArr:wallArrRes,
                   burstArr:burstArrRes,
                   bulletArr:bulletArrRes,
