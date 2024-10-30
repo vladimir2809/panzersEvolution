@@ -66,8 +66,8 @@ var panzer = {
         B: 255,
     },
     color: "white",
-    angleBody: 270,
-    angleTower: 270,
+    angleBody: -90,
+    angleTower: -90,
     dir:0,
     speed:10,
     maxHP: 1000,
@@ -2590,7 +2590,7 @@ function nextGeneration()// следуюшие поколение
                         panzerOne.XP=0;
                         panzerOne.energy = panzerOne.maxEnergy;
                         panzerOne.HP=panzerOne.maxHP;
-                        panzerOne.maxAge = randomInteger(150,250);
+                        panzerOne.maxAge = opt.maxAge;
                         panzerOne.age = 0;
                         updateStatePanzer(panzerOne);
                         panzerArr[j]=JSON.parse(JSON.stringify(panzerOne));
@@ -2699,26 +2699,26 @@ function checkObjVisible(panzer,obj,barrierArr)// может ли танк по�
     {
         if (panzer.y>obj.y && panzer.y-obj.y<dist)
         {
-            if (checkBarrierVisible(panzer,obj,barrierArr,1)==false)
-            return 3;
+            if (checkBarrierVisible(panzer,obj,barrierArr,0)==false)
+            return 2;
         }
         else if (panzer.y<obj.y && obj.y - panzer.y<dist)
         {
-            if (checkBarrierVisible(panzer,obj,barrierArr,3)==false)
-            return 1;
+            if (checkBarrierVisible(panzer,obj,barrierArr,2)==false)
+            return 0;
         }
     }
     if (panzer.y<obj.y+obj.height && panzer.y+panzer.height>obj.y)
     {
         if (panzer.x>obj.x && panzer.x-obj.x<dist)
         {
-            if (checkBarrierVisible(panzer,obj,barrierArr,4)==false)
-            return 2;
+            if (checkBarrierVisible(panzer,obj,barrierArr,3)==false)
+            return 1;
         }
         else if (panzer.x<obj.x && obj.x-panzer.x<dist)
         {
-            if (checkBarrierVisible(panzer,obj,barrierArr,2)==false)
-            return 0;
+            if (checkBarrierVisible(panzer,obj,barrierArr,1)==false)
+            return 3;
         }
     }
    
@@ -2729,11 +2729,11 @@ function checkBarrierVisible(objStart,objFinish,arrBarrier,side)
 {
     let addXY ={x:0,y:0};
     let dist = 0;
-    if (side == 1) { dist = objStart.y - objFinish.y; addXY.y=-1}
-    if (side == 2) { dist = objFinish.x - objStart.x; addXY.x=1 }
+    if (side == 0) { dist = objStart.y - objFinish.y; addXY.y=-1}
+    if (side == 1) { dist = objFinish.x - objStart.x; addXY.x=1 }
 
-    if (side == 3) { dist = objFinish.y - objStart.y; addXY.y=1 }
-    if (side == 4) { dist = objStart.x - objFinish.x; addXY.x=-1}
+    if (side == 2) { dist = objFinish.y - objStart.y; addXY.y=1 }
+    if (side == 3) { dist = objStart.x - objFinish.x; addXY.x=-1}
     let objIter = JSON.parse(JSON.stringify(objStart));
     for (let i = 0; i < dist;i++)
     {
