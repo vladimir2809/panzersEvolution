@@ -2785,7 +2785,7 @@ function nextGeneration()// следуюшие поколение
                         panzerOne.XP=0;
                         panzerOne.energy = panzerOne.maxEnergy;
                         panzerOne.HP=panzerOne.maxHP;
-                        panzerOne.maxAge = randomInteger(150,250);
+                        panzerOne.maxAge = opt.maxAge;
                         panzerOne.age = 0;
                         updateStatePanzer(panzerOne);
                         panzerArr[j]=JSON.parse(JSON.stringify(panzerOne));
